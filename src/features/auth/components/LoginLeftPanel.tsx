@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography } from '@exotel-npm-dev/signal-design-system';
-import heroImg from '@/assets/hero.png';
+import loginScreenBg from '../../../assets/login-screen-bg.png';
 
 const LOGO = 'https://ik.imagekit.io/kx5hycpnh/LogoExpanded.svg?updatedAt=1763974367162';
 
@@ -39,6 +39,7 @@ export function LoginLeftPanel() {
         flexDirection: 'column',
         minHeight: '100vh',
         p: 4,
+        backgroundColor: 'custom.loginBgColor',
       }}
     >
       {/* Logo */}
@@ -58,7 +59,7 @@ export function LoginLeftPanel() {
       >
         <Box sx={{ mb: 4 }}>
           <img
-            src={heroImg}
+            src={loginScreenBg}
             alt="Customer support illustration"
             style={{ width: '100%', maxWidth: 360, height: 'auto', objectFit: 'contain' }}
           />

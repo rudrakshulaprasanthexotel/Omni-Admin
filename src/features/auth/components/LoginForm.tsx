@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Box, FormField, Button, IconButton, Icon, Typography } from '@exotel-npm-dev/signal-design-system';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { login } from '../asyncActions';
+import { selectLoginError, selectLoginLoading } from '../authSlice';
 
 export function LoginForm() {
   const dispatch = useAppDispatch();
-  const { loginLoading, loginError } = useAppSelector((state) => state.auth);
+  const loginLoading = useAppSelector(selectLoginLoading);
+  const loginError = useAppSelector(selectLoginError);
 
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
@@ -27,7 +29,7 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} noValidate>
       <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: 400 }}>
-        <Typography variant="h4" fontWeight={600} sx={{ mb: 5 }}>
+        <Typography variant="h3" fontWeight={600} sx={{ mb: 2 }}>
           Welcome!
         </Typography>
 
@@ -63,22 +65,21 @@ export function LoginForm() {
           />
         </Box>
 
-        {loginError && (
-          <Typography variant="body2" color="error" sx={{ mb: 2 }}>
-            {loginError}
-          </Typography>
-        )}
-
         <Button
           type="submit"
           variant="contained"
           fullWidth
           size="large"
           disabled={loginLoading || !userId.trim() || !password.trim()}
-          sx={{ mt: 1, height: 48, borderRadius: '24px' }}
         >
           {loginLoading ? 'Signing In...' : 'Sign In'}
         </Button>
+
+        {loginError && (
+          <Typography variant="body2" color="error" sx={{ mt: 1, textAlign: 'center' }}>
+            {loginError}
+          </Typography>
+        )}
       </Box>
     </form>
   );

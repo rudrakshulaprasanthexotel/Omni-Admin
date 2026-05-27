@@ -8,7 +8,6 @@ export function Component() {
       sx={{
         display: 'flex',
         minHeight: '100vh',
-        bgcolor: '#fff',
         flexDirection: { xs: 'column', md: 'row' },
       }}
     >

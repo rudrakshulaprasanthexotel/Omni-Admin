@@ -261,7 +261,7 @@ function localStorageLog(key: string, messageToLog: any) {
 
 //listen all uncaught error
 window.onerror = function (message, source, lineno, colno, error) {
-	AmeyoLogger.error(error);
+	AmeyoLogger.error(message, source, lineno, colno, error);
 	// Dynamic import to avoid circular dependency with ErrorReporterService -> store -> SendErrorLogSlice -> AmeyoLogger
 	// import('@/app/services/errorReporter/ErrorReporterService').then(({ ErrorReporterService }) => {
 	// 	ErrorReporterService.getInstance().report(

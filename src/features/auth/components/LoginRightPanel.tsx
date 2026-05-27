@@ -23,7 +23,6 @@ export function LoginRightPanel() {
             px: 1.5,
             py: 0.75,
             borderRadius: '6px',
-            '&:hover': { bgcolor: '#f5f5f5' },
           }}
         >
           <Box component="span" sx={{ fontSize: 16 }}>🇮🇳</Box>
