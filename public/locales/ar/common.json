@@ -1,0 +1,14 @@
+{
+    "welcome": "مرحبا!",
+    "enterUserId": "أدخل معرف المستخدم",
+    "enterPassword": "أدخل كلمة المرور",
+    "signIn": "تسجيل الدخول",
+    "signingIn": "جاري التسجيل...",
+    "signInError": "خطأ في تسجيل الدخول",
+    "carouselStreamlineTitle": "تبسيط سير العمل",
+    "carouselStreamlineDescription": "إدارة جميع تفاعلات العملاء بكفاءة في مكان واحد",
+    "carouselInsightsTitle": "رؤى في الوقت الفعلي",
+    "carouselInsightsDescription": "مراقبة أداء الوكلاء ومقاييس قوائم الانتظار فور حدوثها",
+    "carouselCollaborationTitle": "تعاون سلس",
+    "carouselCollaborationDescription": "ربط الفرق عبر القنوات لحل أسرع"
+}

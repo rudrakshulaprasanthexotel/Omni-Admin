@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { LoginResponse } from "./types";
 import { login } from "./asyncActions";
+import type { RootState } from "@/store";
 
 interface AuthState {
   loginResponse: LoginResponse | null;
@@ -32,6 +33,7 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loginLoading = false;
         state.loginResponse = action.payload;
+        state.loginError = null;
       })
       .addCase(login.rejected, (state, action) => {
         state.loginLoading = false;
@@ -39,6 +41,10 @@ const authSlice = createSlice({
       });
   },
 });
+
+export const selectLoginLoading = (state: RootState) => state.auth.loginLoading;
+export const selectLoginError = (state: RootState) => state.auth.loginError;
+export const selectLoginResponse = (state: RootState) => state.auth.loginResponse;
 
 export const { clearLoginResponse } = authSlice.actions;
 export default authSlice.reducer;
