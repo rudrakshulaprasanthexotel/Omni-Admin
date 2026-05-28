@@ -1,0 +1,14 @@
+{
+    "welcome": "Welcome!",
+    "enterUserId": "Enter User ID",
+    "enterPassword": "Enter Password",
+    "signIn": "Sign In",
+    "signingIn": "Signing In...",
+    "signInError": "Sign In Error",
+    "carouselStreamlineTitle": "Streamline Your Workflow",
+    "carouselStreamlineDescription": "Efficiently manage all your customer interactions in one place",
+    "carouselInsightsTitle": "Real-Time Insights",
+    "carouselInsightsDescription": "Monitor agent performance and queue metrics as they happen",
+    "carouselCollaborationTitle": "Seamless Collaboration",
+    "carouselCollaborationDescription": "Connect teams across channels for faster resolution"
+}

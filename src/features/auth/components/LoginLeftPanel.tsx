@@ -1,35 +1,27 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography } from '@exotel-npm-dev/signal-design-system';
+import { useTranslation } from 'react-i18next';
 import loginScreenBg from '../../../assets/login-screen-bg.png';
+import BrandLogo from '@/shared/components/brandLogo';
 
-const LOGO = 'https://ik.imagekit.io/kx5hycpnh/LogoExpanded.svg?updatedAt=1763974367162';
-
-const CAROUSEL_ITEMS = [
-  {
-    title: 'Streamline Your Workflow',
-    description: 'Efficiently manage all your customer interactions in one place',
-  },
-  {
-    title: 'Real-Time Insights',
-    description: 'Monitor agent performance and queue metrics as they happen',
-  },
-  {
-    title: 'Seamless Collaboration',
-    description: 'Connect teams across channels for faster resolution',
-  },
+const CAROUSEL_KEYS = [
+  { title: 'carouselStreamlineTitle', description: 'carouselStreamlineDescription' },
+  { title: 'carouselInsightsTitle', description: 'carouselInsightsDescription' },
+  { title: 'carouselCollaborationTitle', description: 'carouselCollaborationDescription' },
 ];
 
 export function LoginLeftPanel() {
+  const { t } = useTranslation();
   const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % CAROUSEL_ITEMS.length);
+      setActiveSlide((prev) => (prev + 1) % CAROUSEL_KEYS.length);
     }, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  const currentItem = CAROUSEL_ITEMS[activeSlide];
+  const currentItem = CAROUSEL_KEYS[activeSlide];
 
   return (
     <Box
@@ -44,7 +36,7 @@ export function LoginLeftPanel() {
     >
       {/* Logo */}
       <Box>
-      <img src={LOGO} alt="exotel logo" width="99" height="30" />
+        <BrandLogo />
       </Box>
 
       {/* Illustration + Carousel */}
@@ -67,14 +59,14 @@ export function LoginLeftPanel() {
 
         <Box sx={{ textAlign: 'center', maxWidth: 400 }}>
           <Typography variant="h5" fontWeight={600} sx={{ mb: 1 }}>
-            {currentItem.title}
+            {t(currentItem.title)}
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 2.5 }}>
-            {currentItem.description}
+            {t(currentItem.description)}
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-            {CAROUSEL_ITEMS.map((_, index) => (
+            {CAROUSEL_KEYS.map((_, index) => (
               <Box
                 key={index}
                 component="button"

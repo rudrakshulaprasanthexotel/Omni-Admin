@@ -3,8 +3,10 @@ import { Box, FormField, Button, IconButton, Icon, Typography } from '@exotel-np
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { login } from '../asyncActions';
 import { selectLoginError, selectLoginLoading } from '../authSlice';
+import { useTranslation } from 'react-i18next';
 
 export function LoginForm() {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const loginLoading = useAppSelector(selectLoginLoading);
   const loginError = useAppSelector(selectLoginError);
@@ -29,14 +31,14 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} noValidate>
       <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: 400 }}>
-        <Typography variant="h3" fontWeight={600} sx={{ mb: 2 }}>
-          Welcome!
+        <Typography variant="h3" sx={{ mb: 2 }}>
+          {t('welcome')}
         </Typography>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 3 }}>
           <FormField
-            label="Enter User ID"
-            placeholder="Enter User ID"
+            label={t('enterUserId')}
+            placeholder={t('enterUserId')}
             required
             fullWidth
             value={userId}
@@ -45,8 +47,8 @@ export function LoginForm() {
           />
 
           <FormField
-            label="Enter Password"
-            placeholder="Enter Password"
+            label={t('enterPassword')}
+            placeholder={t('enterPassword')}
             required
             fullWidth
             type={showPassword ? 'text' : 'password'}
@@ -72,12 +74,12 @@ export function LoginForm() {
           size="large"
           disabled={loginLoading || !userId.trim() || !password.trim()}
         >
-          {loginLoading ? 'Signing In...' : 'Sign In'}
+          {loginLoading ? t('signingIn') : t('signIn')}
         </Button>
 
         {loginError && (
           <Typography variant="body2" color="error" sx={{ mt: 1, textAlign: 'center' }}>
-            {loginError}
+            {t('signInError')}
           </Typography>
         )}
       </Box>

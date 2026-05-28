@@ -1,7 +1,12 @@
 import { Box, Typography } from '@exotel-npm-dev/signal-design-system';
 import { LoginForm } from './LoginForm';
+import LanguageSwitcher from './LanguageSwitcher';
+import BrandLogo from '@/shared/components/brandLogo';
+import useIsMobile from '@/shared/hooks/useIsMobile';
 
 export function LoginRightPanel() {
+  const isMobile = useIsMobile();
+
   return (
     <Box
       sx={{
@@ -12,24 +17,9 @@ export function LoginRightPanel() {
         p: 4,
       }}
     >
-      {/* Language selector */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.75,
-            cursor: 'pointer',
-            px: 1.5,
-            py: 0.75,
-            borderRadius: '6px',
-          }}
-        >
-          <Box component="span" sx={{ fontSize: 16 }}>🇮🇳</Box>
-          <Typography variant="body2" fontWeight={500} color="text.primary">
-            EN
-          </Typography>
-        </Box>
+      <Box sx={{ display: 'flex', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
+        {isMobile && <BrandLogo />}
+        <LanguageSwitcher />
       </Box>
 
       {/* Form */}
