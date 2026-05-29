@@ -1,5 +1,5 @@
 import { ListItemIcon, ListItemText, MenuItem, Popover, Typography, Button } from '@exotel-npm-dev/signal-design-system'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import ARFlag from '../../../assets/flags/ar.svg';
 import DEFlag from '../../../assets/flags/de.svg';
 import FRFlag from '../../../assets/flags/fr.svg';
@@ -56,6 +56,10 @@ const languages: LanguageType[] = [
 const LanguageSwitcher = () => {
     const [menu, setMenu] = useState<null | HTMLElement>(null);
     const [selectedLanguage, setSelectedLanguage] = useState<LanguageType>(languages[0]);
+
+    useEffect(() => {
+        setSelectedLanguage(languages.find(lng => lng.id === i18n.language) || languages[0]);
+    }, [])
 
     const langMenuClick = (event: React.MouseEvent<HTMLElement>) => {
         setMenu(event.currentTarget);

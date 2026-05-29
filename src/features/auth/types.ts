@@ -11,7 +11,7 @@ interface UserSessionInfo {
     terminalInfo: string
     sessionId: string
     loginTime: number
-    userType: string
+    userType: UserType
     lastLoginInfo: LastLoginInfo
     publicIp: any
     clientType: any
@@ -122,3 +122,9 @@ export interface ILoginRequestInputBean {
     clientType?: string;
     clientVersion?: string;
 }
+
+export const UserType = {
+    ADMIN: 'Administrator',
+} as const;
+
+export type UserType = (typeof UserType)[keyof typeof UserType];
