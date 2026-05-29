@@ -7,11 +7,14 @@ import {
   Icon,
   Typography,
   type GridColDef,
+  type GridFilterModel,
   type ToolbarButtonConfig,
 } from '@exotel-npm-dev/signal-design-system';
+import { useCopilotReadable } from '@copilotkit/react-core';
 import QueueFormDialog from '../components/QueueFormDialog';
 import DeleteQueueDialog from '../components/DeleteQueueDialog';
 import { QueueStatus, type Queue, type QueueFormValues } from '../types';
+import { useCopilotCommand } from '@/features/copilot/CopilotCommandRegistry';
 
 const INITIAL_QUEUES: Queue[] = [
   { id: '1', name: 'Sales', description: 'Inbound sales enquiries', strategy: 'Round Robin', agents: 12, status: 'Active' },
@@ -25,6 +28,7 @@ export function Component() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingQueue, setEditingQueue] = useState<Queue | null>(null);
   const [queueToDelete, setQueueToDelete] = useState<Queue | null>(null);
+  const [filterModel, setFilterModel] = useState<GridFilterModel>({ items: [] });
 
   const openAddDialog = () => {
     setEditingQueue(null);
@@ -57,6 +61,18 @@ export function Component() {
     setQueues((prev) => prev.filter((queue) => queue.id !== queueToDelete.id));
     setQueueToDelete(null);
   };
+
+  useCopilotReadable({
+    description: 'The list of call queues currently shown in the admin Queues table.',
+    value: queues,
+  });
+
+  // Applies a quick filter to the Queues table, as if typing into the filter box.
+  useCopilotCommand('queues.filter', (args) => {
+    const query = String(args.query ?? '').trim();
+    setFilterModel({ items: [], quickFilterValues: query ? query.split(/\s+/) : [] });
+    return query ? `Filtered the Queues table by "${query}".` : 'Cleared the Queues filter.';
+  });
 
   const columns = useMemo<GridColDef[]>(
     () => [
@@ -138,6 +154,8 @@ export function Component() {
           rows={queues}
           columns={columns}
           customToolbarButtons={toolbarButtons}
+          filterModel={filterModel}
+          onFilterModelChange={setFilterModel}
           disableRowSelectionOnClick
           emptyStateMessage="No queues yet. Add your first queue to get started."
         />

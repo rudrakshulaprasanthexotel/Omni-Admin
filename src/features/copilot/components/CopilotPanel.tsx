@@ -1,35 +1,27 @@
 import { useState } from 'react';
 import { Box, ChatInputBox, Drawer, Icon, Typography } from '@exotel-npm-dev/signal-design-system';
+import { useCopilotChat } from '@copilotkit/react-core';
+import { Role, TextMessage } from '@copilotkit/runtime-client-gql';
 
 interface CopilotPanelProps {
   open: boolean;
   onClose: () => void;
 }
 
-interface ChatMessage {
-  id: string;
-  author: 'user' | 'assistant';
-  text: string;
-}
-
 const CopilotPanel = ({ open, onClose }: CopilotPanelProps) => {
   const [value, setValue] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { visibleMessages, appendMessage, isLoading } = useCopilotChat();
 
   const handleSend = (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    setMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), author: 'user', text: trimmed },
-      {
-        id: crypto.randomUUID(),
-        author: 'assistant',
-        text: "This is a placeholder response. I'll be able to help with that soon!",
-      },
-    ]);
+    appendMessage(new TextMessage({ content: trimmed, role: Role.User }));
     setValue('');
   };
+
+  const textMessages = (visibleMessages ?? []).filter(
+    (message): message is TextMessage => message.isTextMessage?.(),
+  );
 
   return (
     <Drawer
@@ -41,7 +33,7 @@ const CopilotPanel = ({ open, onClose }: CopilotPanelProps) => {
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Box sx={{ flex: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {messages.length === 0 ? (
+          {textMessages.length === 0 ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Icon name="sparkle" weight="fill" color="#7C4DFF" />
@@ -53,23 +45,27 @@ const CopilotPanel = ({ open, onClose }: CopilotPanelProps) => {
               </Typography>
             </Box>
           ) : (
-            messages.map((message) => (
+            textMessages.map((message) => (
               <Box
                 key={message.id}
                 sx={{
-                  alignSelf: message.author === 'user' ? 'flex-end' : 'flex-start',
+                  alignSelf: message.role === Role.User ? 'flex-end' : 'flex-start',
                   maxWidth: '85%',
                   px: 1.5,
                   py: 1,
                   borderRadius: 2,
-                  bgcolor:
-                    message.author === 'user' ? 'primary.main' : 'surface.elevation2',
-                  color: message.author === 'user' ? 'primary.contrastText' : 'text.primary',
+                  bgcolor: message.role === Role.User ? 'primary.main' : 'surface.elevation2',
+                  color: message.role === Role.User ? 'primary.contrastText' : 'text.primary',
                 }}
               >
-                <Typography variant="body2">{message.text}</Typography>
+                <Typography variant="body2">{message.content}</Typography>
               </Box>
             ))
+          )}
+          {isLoading && (
+            <Typography variant="body2" color="text.secondary">
+              Copilot is thinking…
+            </Typography>
           )}
         </Box>
         <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
@@ -78,6 +74,7 @@ const CopilotPanel = ({ open, onClose }: CopilotPanelProps) => {
             onChange={setValue}
             onSend={handleSend}
             placeholder="Ask Copilot anything..."
+            sendDisabled={isLoading}
           />
         </Box>
       </Box>

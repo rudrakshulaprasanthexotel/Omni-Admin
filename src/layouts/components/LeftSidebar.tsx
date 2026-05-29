@@ -30,7 +30,9 @@ const LeftSidebar = () => {
     const navigate = useNavigate();
 
     const handleNavigate = (item: NavItemPayload) => {
-        navigate(item.path);
+        if (item.path) {
+            navigate(item.path);
+        }
     };
 
     return (

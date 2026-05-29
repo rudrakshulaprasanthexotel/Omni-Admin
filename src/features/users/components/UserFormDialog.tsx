@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import {
   Box,
   Button,
@@ -10,9 +10,14 @@ import {
 } from '@exotel-npm-dev/signal-design-system';
 import { UserRole, UserStatus, type User, type UserFormValues } from '../types';
 
+export interface UserFormDialogHandle {
+  submit: () => void;
+}
+
 interface UserFormDialogProps {
   open: boolean;
   initialUser?: User | null;
+  prefill?: Partial<UserFormValues> | null;
   onClose: () => void;
   onSubmit: (values: UserFormValues) => void;
 }
@@ -26,7 +31,8 @@ const EMPTY_FORM: UserFormValues = {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const UserFormDialog = ({ open, initialUser, onClose, onSubmit }: UserFormDialogProps) => {
+const UserFormDialog = forwardRef<UserFormDialogHandle, UserFormDialogProps>(
+  ({ open, initialUser, prefill, onClose, onSubmit }, ref) => {
   const isEdit = Boolean(initialUser);
   const [values, setValues] = useState<UserFormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof UserFormValues, string>>>({});
@@ -37,10 +43,10 @@ const UserFormDialog = ({ open, initialUser, onClose, onSubmit }: UserFormDialog
       const { name, email, role, status } = initialUser;
       setValues({ name, email, role, status });
     } else {
-      setValues(EMPTY_FORM);
+      setValues({ ...EMPTY_FORM, ...prefill });
     }
     setErrors({});
-  }, [open, initialUser]);
+  }, [open, initialUser, prefill]);
 
   const updateField = <K extends keyof UserFormValues>(field: K, value: UserFormValues[K]) => {
     setValues((prev) => ({ ...prev, [field]: value }));
@@ -63,6 +69,8 @@ const UserFormDialog = ({ open, initialUser, onClose, onSubmit }: UserFormDialog
       email: values.email.trim(),
     });
   };
+
+  useImperativeHandle(ref, () => ({ submit: handleSubmit }));
 
   return (
     <StructuredDialog
@@ -129,6 +137,8 @@ const UserFormDialog = ({ open, initialUser, onClose, onSubmit }: UserFormDialog
       </DialogFooter>
     </StructuredDialog>
   );
-};
+});
+
+UserFormDialog.displayName = 'UserFormDialog';
 
 export default UserFormDialog;
