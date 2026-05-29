@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import TopNavBar from "./components/TopNavBar";
 import { AuthGuard } from "@/shared/components/guards/AuthGuard";
 import LeftSidebar from "./components/LeftSidebar";
+import CopilotWidget from "@/features/copilot/components/CopilotWidget";
 
 
 const AuthenticatedLayout = () => {
@@ -20,6 +21,7 @@ const AuthenticatedLayout = () => {
                         </Box>
                     </Box>
                 </Box>
+                <CopilotWidget />
             </Box>
         </AuthGuard>
     )
