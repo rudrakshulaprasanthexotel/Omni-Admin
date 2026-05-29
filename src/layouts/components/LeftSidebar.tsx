@@ -1,4 +1,5 @@
-import { Navigation, type NavSectionProps } from "@exotel-npm-dev/signal-design-system";
+import { Navigation, type NavItemPayload, type NavSectionProps } from "@exotel-npm-dev/signal-design-system";
+import { useNavigate } from "react-router-dom";
 
 const navigationSections: NavSectionProps[] = [
     {
@@ -26,8 +27,14 @@ const navigationSections: NavSectionProps[] = [
 ];
 
 const LeftSidebar = () => {
+    const navigate = useNavigate();
+
+    const handleNavigate = (item: NavItemPayload) => {
+        navigate(item.path);
+    };
+
     return (
-        <Navigation items={navigationSections} />
+        <Navigation onNavigate={handleNavigate} items={navigationSections} />
     );
 };
 

@@ -19,8 +19,6 @@ const TopNavBar = () => {
 
     return (
         <AppBar
-            appLauncherType="default"
-            appLauncherProducts={[]}
             avatarName={userName}
             avatarMenuGroups={[]}
             avatarFooterInfo={[]}
