@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Box, FormField, Button, IconButton, Icon, Typography } from '@exotel-npm-dev/signal-design-system';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { useNavigate } from 'react-router-dom';
 import { login } from '../asyncActions';
 import { selectLoginError, selectLoginLoading } from '../authSlice';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 export function LoginForm() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const loginLoading = useAppSelector(selectLoginLoading);
   const loginError = useAppSelector(selectLoginError);
 
@@ -15,17 +17,21 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId.trim() || !password.trim()) return;
 
-    dispatch(
+    const result = await dispatch(
       login({
         userId,
         token: password,
         domain: window.location.hostname,
       }),
     );
+
+    if (login.fulfilled.match(result)) {
+      navigate('/dashboard', { replace: true });
+    }
   };
 
   return (
@@ -72,9 +78,11 @@ export function LoginForm() {
           variant="contained"
           fullWidth
           size="large"
-          disabled={loginLoading || !userId.trim() || !password.trim()}
+          loading={loginLoading}
+          loadingPosition='end'
+          disabled={!userId.trim() || !password.trim()}
         >
-          {loginLoading ? t('signingIn') : t('signIn')}
+          {t('signIn')}
         </Button>
 
         {loginError && (
