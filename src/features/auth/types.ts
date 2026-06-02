@@ -128,3 +128,23 @@ export const UserType = {
 } as const;
 
 export type UserType = (typeof UserType)[keyof typeof UserType];
+
+export interface ILogoutRequestInputBean {
+    sessionId: string;
+    reason: string;
+}
+
+export interface IKeepAliveWithPingPushRequestInputBean {
+    sessionId: string;
+    lastProcessedPushId?: number;
+    listenerName?: string;
+    pushesFollowPing?: boolean;
+}
+
+export interface IRefreshTokenRequestInputBean {
+    userId: string;
+}
+
+export interface IRefreshTokenResponse {
+    jwtToken: string;
+}
