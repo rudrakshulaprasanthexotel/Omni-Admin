@@ -1,7 +1,9 @@
 import { Navigation, type NavItemPayload, type NavSectionProps } from "@exotel-npm-dev/signal-design-system";
 import { useNavigate } from "react-router-dom";
+import { useAppSelector } from "@/store/hooks";
+import { selectLoginResponse } from "@/features/auth/authSlice";
 
-const navigationSections: NavSectionProps[] = [
+const adminNavigationSections: NavSectionProps[] = [
     {
         label: 'Main',
         items: [
@@ -26,8 +28,32 @@ const navigationSections: NavSectionProps[] = [
     },
 ];
 
+const supervisorNavigationSections: NavSectionProps[] = [
+    {
+        label: 'Main',
+        items: [
+            { id: 'dashboard', label: 'Dashboard', iconName: 'house', path: '/dashboard', openNewPage: false },
+            { id: 'monitoring', label: 'Live Monitoring', iconName: 'chart-bar', path: '/monitoring', openNewPage: false },
+            { id: 'team', label: 'Team Performance', iconName: 'users', path: '/team', openNewPage: false },
+        ],
+    },
+    {
+        label: 'Preferences',
+        items: [
+            { id: 'settings', label: 'Settings', iconName: 'gear', path: '/settings', openNewPage: false },
+            { id: 'help', label: 'Help', iconName: 'question', path: '/help', openNewPage: false },
+        ],
+    },
+];
+
 const LeftSidebar = () => {
     const navigate = useNavigate();
+    const loginResponse = useAppSelector(selectLoginResponse);
+    const userType = loginResponse?.userSessionInfo?.userType?.toLowerCase() ?? '';
+
+    const navigationSections = userType === 'supervisor'
+        ? supervisorNavigationSections
+        : adminNavigationSections;
 
     const handleNavigate = (item: NavItemPayload) => {
         navigate(item.path);
