@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { LoginResponse } from "./types";
-import { login } from "./asyncActions";
+import { login, refreshToken } from "./asyncActions";
 import type { RootState } from "@/store";
 
 interface AuthState {
@@ -38,7 +38,13 @@ const authSlice = createSlice({
       .addCase(login.rejected, (state, action) => {
         state.loginLoading = false;
         state.loginError = action.payload as string;
-      });
+      })
+      .addCase(refreshToken.fulfilled, (state, action) => {
+        if (state.loginResponse) {
+          state.loginResponse.authenticationState.authPolicyVsUserInfo["auth.type.passwd"].loginProperties.jwt =
+            action?.payload?.jwtToken ?? "";
+        }
+      })
   },
 });
 

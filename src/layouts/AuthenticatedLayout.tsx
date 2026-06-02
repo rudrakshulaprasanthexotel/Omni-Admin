@@ -4,9 +4,12 @@ import TopNavBar from "./components/TopNavBar";
 import { AuthGuard } from "@/shared/components/guards/AuthGuard";
 import LeftSidebar from "./components/LeftSidebar";
 import CopilotWidget from "@/features/copilot/components/CopilotWidget";
+import usePingPush from "@/features/auth/hooks/usePingPush";
 
 
 const AuthenticatedLayout = () => {
+    usePingPush();
+
     return (
         <AuthGuard>
             <Box minHeight="100vh" display="flex" flexDirection="column">

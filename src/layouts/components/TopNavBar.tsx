@@ -3,6 +3,7 @@ import { AppBar, useThemeMode } from "@exotel-npm-dev/signal-design-system";
 import { BRAND_LOGO_URL } from "@/configs/constants";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { selectLoginResponse, clearLoginResponse } from "@/features/auth/authSlice";
+import { logout } from "@/features/auth/asyncActions";
 
 const TopNavBar = () => {
     const dispatch = useAppDispatch();
@@ -12,7 +13,11 @@ const TopNavBar = () => {
 
     const userName = loginResponse?.userSessionInfo?.userName ?? "User";
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await dispatch(logout({
+            sessionId: loginResponse?.userSessionInfo?.sessionId ?? "",
+            reason: "User logged out",
+        }))
         dispatch(clearLoginResponse());
         navigate("/login", { replace: true });
     };
