@@ -4,6 +4,8 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../asyncActions';
 import { selectLoginError, selectLoginLoading } from '../authSlice';
+import { LOGIN_ERROR_CODE } from '../constants';
+import { ForceLoginDialog } from './ForceLoginDialog';
 import { useTranslation } from 'react-i18next';
 
 export function LoginForm() {
@@ -16,21 +18,41 @@ export function LoginForm() {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showForceLogin, setShowForceLogin] = useState(false);
 
-  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!userId.trim() || !password.trim()) return;
-
+  const attemptLogin = async (forceLogin: boolean) => {
     const result = await dispatch(
       login({
         userId,
         token: password,
         domain: window.location.hostname,
+        forceLogin,
       }),
-    );
+    ).unwrap();
 
-    if (login.fulfilled.match(result)) {
-      navigate('/dashboard', { replace: true });
+    navigate('/dashboard', { replace: true });
+    return result;
+  };
+
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!userId.trim() || !password.trim()) return;
+
+    try {
+      await attemptLogin(false);
+    } catch (error: any) {
+      if (error?.errorCode === LOGIN_ERROR_CODE.FORCE_LOGIN_ERROR_CODE) {
+        setShowForceLogin(true);
+      }
+    }
+  };
+
+  const handleForceLogin = async () => {
+    try {
+      await attemptLogin(true);
+      setShowForceLogin(false);
+    } catch {
+      setShowForceLogin(false);
     }
   };
 
@@ -85,12 +107,19 @@ export function LoginForm() {
           {t('signIn')}
         </Button>
 
-        {loginError && (
+        {loginError && !showForceLogin && (
           <Typography variant="body2" color="error" sx={{ mt: 1, textAlign: 'center' }}>
             {t('signInError')}
           </Typography>
         )}
       </Box>
+
+      <ForceLoginDialog
+        open={showForceLogin}
+        loading={loginLoading}
+        onCancel={() => setShowForceLogin(false)}
+        onConfirm={handleForceLogin}
+      />
     </form>
   );
 }

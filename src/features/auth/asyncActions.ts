@@ -1,8 +1,8 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { apiClient, setAuthorizationHeader, setSessionId } from "@/services/apiClient";
-import type { IRefreshTokenResponse, IKeepAliveWithPingPushRequestInputBean, ILoginRequestInputBean, ILogoutRequestInputBean, IRefreshTokenRequestInputBean, LoginResponse } from "./types";
+import type { ILoginApiErrorData, ILoginRejectValue, IRefreshTokenResponse, IKeepAliveWithPingPushRequestInputBean, ILoginRequestInputBean, ILogoutRequestInputBean, IRefreshTokenRequestInputBean, LoginResponse } from "./types";
 
-export const login = createAsyncThunk<LoginResponse, ILoginRequestInputBean>(
+export const login = createAsyncThunk<LoginResponse, ILoginRequestInputBean, { rejectValue: ILoginRejectValue }>(
   "auth/login",
   async (input, { rejectWithValue }) => {
     try {
@@ -16,9 +16,11 @@ export const login = createAsyncThunk<LoginResponse, ILoginRequestInputBean>(
 
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || error.message || "Login failed",
-      );
+      const data: ILoginApiErrorData | undefined = error.response?.data;
+      return rejectWithValue({
+        message: data?.message || error.message || "Login failed",
+        errorCode: data?.errorCode ?? null,
+      });
     }
   },
 );
