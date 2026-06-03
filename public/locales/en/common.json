@@ -4,6 +4,7 @@
     "enterPassword": "Enter Password",
     "signIn": "Sign In",
     "signInError": "Sign In Error",
+    "roleNotSupported": "Your role is not yet supported on this interface. Please log in via the standard portal.",
     "cancel": "Cancel",
     "ok": "OK",
     "forceLoginTitle": "Force Login",

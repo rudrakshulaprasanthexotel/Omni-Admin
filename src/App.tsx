@@ -7,6 +7,7 @@ import { store, persistor } from './store';
 import { router } from './app/router';
 import { theme } from './configs/theme.config';
 import { useSyncAuthHeaders } from '@/features/auth/hooks/useSyncAuthHeaders';
+import { SnackbarProvider } from '@/shared/snackbar';
 
 function AppProviders({ children }: { children: ReactNode }) {
   useSyncAuthHeaders();
@@ -19,7 +20,9 @@ function App() {
       <PersistGate loading={null} persistor={persistor}>
         <AppProviders>
           <ExotelThemeProvider defaultMode="system" themeOverrides={theme}>
-            <RouterProvider router={router} />
+            <SnackbarProvider>
+              <RouterProvider router={router} />
+            </SnackbarProvider>
           </ExotelThemeProvider>
         </AppProviders>
       </PersistGate>
