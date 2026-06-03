@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import AmeyoLogger from '@/services/ameyoLogger/logger';
 import { store } from '@/store';
 import { refreshToken } from '@/features/auth/asyncActions';
@@ -7,12 +7,12 @@ import { refreshToken } from '@/features/auth/asyncActions';
 const logger = AmeyoLogger.get('ApiClient');
 
 
-const axiosInstance: AxiosInstance = axios.create({
+const apiClient: AxiosInstance = axios.create({
 	timeout: 30_000,
 	headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 });
 
-axiosInstance.interceptors.request.use(
+apiClient.interceptors.request.use(
 	(config: InternalAxiosRequestConfig) => {
 		logger.debug('Request:', config.method?.toUpperCase(), config.url);
 		return config;
@@ -24,6 +24,7 @@ axiosInstance.interceptors.request.use(
 );
 
 const REFRESH_TOKEN_URL = '/ameyorestapi/session/refreshToken';
+const LOGIN_URL = '/ameyorestapi/userLogin/login';
 
 // Single-flight refresh: concurrent 401s share one refresh call.
 let refreshPromise: Promise<string> | null = null;
@@ -34,17 +35,28 @@ async function refreshAuthToken(): Promise<string> {
 	return result.jwtToken;
 }
 
-axiosInstance.interceptors.response.use(
+apiClient.interceptors.response.use(
 	(response: AxiosResponse) => response,
-	async (error) => {
+	async (error: AxiosError<any>) => {
 		const originalRequest = error.config as
 			| (InternalAxiosRequestConfig & { _retry?: boolean })
 			| undefined;
 		const status = error.response?.status;
 		const isRefreshCall = originalRequest?.url?.includes(REFRESH_TOKEN_URL);
+		const isLoginCall = originalRequest?.url?.includes(LOGIN_URL);
+		// Only authenticated requests with an existing session can be refreshed.
+		// Login failures have no session yet and must surface their real error.
+		const hasSession = Boolean(store.getState()?.auth?.loginResponse?.userSessionInfo?.sessionId);
 
 		// On 401, refresh the JWT once and replay the original request with it.
-		if (status === 401 && originalRequest && !originalRequest._retry && !isRefreshCall) {
+		if (
+			status === 401 &&
+			originalRequest &&
+			!originalRequest._retry &&
+			!isRefreshCall &&
+			!isLoginCall &&
+			hasSession
+		) {
 			originalRequest._retry = true;
 			try {
 				if (!refreshPromise) {
@@ -59,7 +71,7 @@ axiosInstance.interceptors.response.use(
 				originalRequest.headers.set('Authorization', newJwt);
 
 				logger.debug('Retrying request with refreshed token:', originalRequest.url);
-				return axiosInstance(originalRequest);
+				return apiClient(originalRequest);
 			} catch (refreshError) {
 				refreshPromise = null;
 				logger.error('Token refresh failed:', refreshError);
@@ -78,11 +90,11 @@ axiosInstance.interceptors.response.use(
 
 
 export function setSessionId(sessionId: string): void {
-	axiosInstance.defaults.headers.common['sessionId'] = sessionId;
+	apiClient.defaults.headers.common['sessionId'] = sessionId;
 }
 
 export function setAuthorizationHeader(bearerToken: string): void {
-	axiosInstance.defaults.headers.common['Authorization'] = bearerToken;
+	apiClient.defaults.headers.common['Authorization'] = bearerToken;
 }
 
-export { axiosInstance };
+export { apiClient };

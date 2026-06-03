@@ -1,12 +1,12 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { axiosInstance, setAuthorizationHeader, setSessionId } from "@/services/apiClient";
+import { apiClient, setAuthorizationHeader, setSessionId } from "@/services/apiClient";
 import type { IRefreshTokenResponse, IKeepAliveWithPingPushRequestInputBean, ILoginRequestInputBean, ILogoutRequestInputBean, IRefreshTokenRequestInputBean, LoginResponse } from "./types";
 
 export const login = createAsyncThunk<LoginResponse, ILoginRequestInputBean>(
   "auth/login",
   async (input, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post<LoginResponse>(
+      const response = await apiClient.post<LoginResponse>(
         "/ameyorestapi/userLogin/login",
         input,
       );
@@ -27,7 +27,7 @@ export const logout = createAsyncThunk<unknown, ILogoutRequestInputBean>(
   "auth/logout",
   async (input, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post<unknown>(
+      const response = await apiClient.post<unknown>(
         "/ameyorestapi/session/userLogout",
         input
       )
@@ -45,7 +45,7 @@ export const keepAliveWithPingPush = createAsyncThunk<unknown, IKeepAliveWithPin
   "auth/keepAliveWithPingPush",
   async (input, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post<unknown>(
+      const response = await apiClient.post<unknown>(
         "/ameyorestapi/session/keepAliveWithPingPush",
         input
       )
@@ -63,7 +63,7 @@ export const refreshToken = createAsyncThunk<IRefreshTokenResponse, IRefreshToke
   "auth/refreshToken",
   async (input, { rejectWithValue}) => {
     try {
-      const response = await axiosInstance.post<IRefreshTokenResponse>(
+      const response = await apiClient.post<IRefreshTokenResponse>(
         "/ameyorestapi/session/refreshToken",
         input
       )

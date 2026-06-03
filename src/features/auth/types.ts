@@ -149,3 +149,11 @@ export interface IRefreshTokenRequestInputBean {
 export interface IRefreshTokenResponse {
     jwtToken: string;
 }
+
+export interface ILoginErrorResponse {
+    timestamp: string
+    path: string
+    status: number
+    error: string
+    requestId: string
+}
