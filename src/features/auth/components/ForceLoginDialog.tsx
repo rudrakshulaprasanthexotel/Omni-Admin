@@ -1,7 +1,5 @@
 import {
-  Box,
   Button,
-  DialogBody,
   StructuredDialog,
   Typography,
 } from '@exotel-npm-dev/signal-design-system';

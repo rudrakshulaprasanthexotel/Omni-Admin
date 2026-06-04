@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Button,
@@ -30,9 +30,11 @@ const UserFormDialog = ({ open, initialUser, onClose, onSubmit }: UserFormDialog
   const isEdit = Boolean(initialUser);
   const [values, setValues] = useState<UserFormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof UserFormValues, string>>>({});
+  const [wasOpen, setWasOpen] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
+  // Reset the form to match the target user whenever the dialog transitions to open.
+  if (open && !wasOpen) {
+    setWasOpen(true);
     if (initialUser) {
       const { name, email, role, status } = initialUser;
       setValues({ name, email, role, status });
@@ -40,7 +42,9 @@ const UserFormDialog = ({ open, initialUser, onClose, onSubmit }: UserFormDialog
       setValues(EMPTY_FORM);
     }
     setErrors({});
-  }, [open, initialUser]);
+  } else if (!open && wasOpen) {
+    setWasOpen(false);
+  }
 
   const updateField = <K extends keyof UserFormValues>(field: K, value: UserFormValues[K]) => {
     setValues((prev) => ({ ...prev, [field]: value }));

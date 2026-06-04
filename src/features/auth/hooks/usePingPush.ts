@@ -5,29 +5,27 @@ import { useEffect, useRef } from "react";
 
 
 const usePingPush = () => {
-    const dispatch = useAppDispatch();
-    const loginResponse = useAppSelector(selectLoginResponse);
-    const intervalId = useRef<number | null>(null);
+  const dispatch = useAppDispatch();
+  const loginResponse = useAppSelector(selectLoginResponse);
+  const intervalId = useRef<number | null>(null);
 
-    useEffect(() => {
-        if (loginResponse?.userSessionInfo?.sessionId) {
-            intervalId.current = setInterval(keepAliveWithPingPushAction, 20000);
-        }
-
-        return () => {
-            if (intervalId.current) {
-                clearInterval(intervalId.current);
-            }
-        }
-    }, [loginResponse]);
-
-    function keepAliveWithPingPushAction() {
+  useEffect(() => {
+    if (loginResponse?.userSessionInfo?.sessionId) {
+      intervalId.current = setInterval(() => {
         dispatch(keepAliveWithPingPush({
-            sessionId: loginResponse?.userSessionInfo?.sessionId ?? "",
+          sessionId: loginResponse?.userSessionInfo?.sessionId ?? "",
         }));
+      }, 20000);
     }
 
-    return null;
+    return () => {
+      if (intervalId.current) {
+        clearInterval(intervalId.current);
+      }
+    }
+  }, [loginResponse]);
+
+  return null;
 }
 
 export default usePingPush;

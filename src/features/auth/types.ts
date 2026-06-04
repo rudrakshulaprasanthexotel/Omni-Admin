@@ -124,9 +124,9 @@ export interface ILoginRequestInputBean {
 }
 
 export const UserType = {
-    ADMIN: 'Administrator',
-    SUPERVISOR: 'Supervisor',
-    EXECUTIVE: 'Executive'
+  ADMIN: 'Administrator',
+  SUPERVISOR: 'Supervisor',
+  EXECUTIVE: 'Executive'
 } as const;
 
 export type UserType = (typeof UserType)[keyof typeof UserType];

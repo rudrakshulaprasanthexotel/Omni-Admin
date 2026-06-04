@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'src/boilerplate']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -17,6 +17,39 @@ export default defineConfig([
     ],
     languageOptions: {
       globals: globals.browser,
+    },
+    rules: {
+      'indent': ['error', 2],
+      '@typescript-eslint/no-explicit-any': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'CallExpression[callee.name=/^(useCallback|useMemo)$/]',
+          message:
+            'useCallback and useMemo are not allowed in this project.',
+        },
+        {
+          selector:
+            'CallExpression[callee.object.name="React"][callee.property.name=/^(useCallback|useMemo)$/]',
+          message:
+            'useCallback and useMemo are not allowed in this project.',
+        },
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'react',
+              importNames: ['useCallback', 'useMemo'],
+              message:
+                'useCallback and useMemo are not allowed in this project.',
+            },
+          ],
+        },
+      ],
     },
   },
 ])

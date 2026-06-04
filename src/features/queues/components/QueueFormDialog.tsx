@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Button,
@@ -29,9 +29,11 @@ const QueueFormDialog = ({ open, initialQueue, onClose, onSubmit }: QueueFormDia
   const isEdit = Boolean(initialQueue);
   const [values, setValues] = useState<QueueFormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof QueueFormValues, string>>>({});
+  const [wasOpen, setWasOpen] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
+  // Reset the form to match the target queue whenever the dialog transitions to open.
+  if (open && !wasOpen) {
+    setWasOpen(true);
     if (initialQueue) {
       const { name, description, strategy, agents, status } = initialQueue;
       setValues({ name, description, strategy, agents, status });
@@ -39,7 +41,9 @@ const QueueFormDialog = ({ open, initialQueue, onClose, onSubmit }: QueueFormDia
       setValues(EMPTY_FORM);
     }
     setErrors({});
-  }, [open, initialQueue]);
+  } else if (!open && wasOpen) {
+    setWasOpen(false);
+  }
 
   const updateField = <K extends keyof QueueFormValues>(field: K, value: QueueFormValues[K]) => {
     setValues((prev) => ({ ...prev, [field]: value }));

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Chip,
@@ -58,71 +58,65 @@ export function Component() {
     setQueueToDelete(null);
   };
 
-  const columns = useMemo<GridColDef[]>(
-    () => [
-      { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
-      { field: 'description', headerName: 'Description', flex: 1.4, minWidth: 220 },
-      { field: 'strategy', headerName: 'Routing Strategy', flex: 1, minWidth: 160 },
-      {
-        field: 'agents',
-        headerName: 'Agents',
-        type: 'number',
-        flex: 0.6,
-        minWidth: 100,
-        align: 'left',
-        headerAlign: 'left',
-      },
-      {
-        field: 'status',
-        headerName: 'Status',
-        flex: 0.8,
-        minWidth: 120,
-        renderCell: (params) => (
-          <Chip
-            label={params.value}
-            size="small"
-            color={params.value === QueueStatus.ACTIVE ? 'success' : 'warning'}
-            variant="outlined"
-          />
-        ),
-      },
-      {
-        field: 'actions',
-        type: 'actions',
-        headerName: 'Actions',
-        width: 120,
-        getActions: (params) => [
-          <GridActionsCellItem
-            key="edit"
-            icon={<Icon name="pencil-simple" />}
-            label="Edit"
-            onClick={() => openEditDialog(params.row as Queue)}
-          />,
-          <GridActionsCellItem
-            key="delete"
-            icon={<Icon name="trash" />}
-            label="Delete"
-            onClick={() => setQueueToDelete(params.row as Queue)}
-          />,
-        ],
-      },
-    ],
-    [],
-  );
+  const columns: GridColDef[] = [
+    { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
+    { field: 'description', headerName: 'Description', flex: 1.4, minWidth: 220 },
+    { field: 'strategy', headerName: 'Routing Strategy', flex: 1, minWidth: 160 },
+    {
+      field: 'agents',
+      headerName: 'Agents',
+      type: 'number',
+      flex: 0.6,
+      minWidth: 100,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      flex: 0.8,
+      minWidth: 120,
+      renderCell: (params) => (
+        <Chip
+          label={params.value}
+          size="small"
+          color={params.value === QueueStatus.ACTIVE ? 'success' : 'warning'}
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      field: 'actions',
+      type: 'actions',
+      headerName: 'Actions',
+      width: 120,
+      getActions: (params) => [
+        <GridActionsCellItem
+          key="edit"
+          icon={<Icon name="pencil-simple" />}
+          label="Edit"
+          onClick={() => openEditDialog(params.row as Queue)}
+        />,
+        <GridActionsCellItem
+          key="delete"
+          icon={<Icon name="trash" />}
+          label="Delete"
+          onClick={() => setQueueToDelete(params.row as Queue)}
+        />,
+      ],
+    },
+  ];
 
-  const toolbarButtons = useMemo<ToolbarButtonConfig[]>(
-    () => [
-      {
-        id: 'add-queue',
-        icon: <Icon name="plus" />,
-        label: 'Add Queue',
-        tooltip: 'Add a new queue',
-        color: 'primary',
-        onClick: openAddDialog,
-      },
-    ],
-    [],
-  );
+  const toolbarButtons: ToolbarButtonConfig[] = [
+    {
+      id: 'add-queue',
+      icon: <Icon name="plus" />,
+      label: 'Add Queue',
+      tooltip: 'Add a new queue',
+      color: 'primary',
+      onClick: openAddDialog,
+    },
+  ];
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, height: '100%' }}>
