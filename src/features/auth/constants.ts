@@ -1,3 +1,14 @@
+import { UserType } from "./types";
+
+/**
+ * Roles permitted to log in through this interface. Any role outside this list
+ * is rejected after authentication and asked to use the standard portal.
+ */
+export const ALLOWED_ROLES: readonly UserType[] = [
+  UserType.ADMIN,
+  UserType.SUPERVISOR,
+];
+
 /**
  * Login API failure error codes.
  * Add any new error code here and reference it from the auth flow.
