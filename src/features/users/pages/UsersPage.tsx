@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Chip,
@@ -61,62 +61,56 @@ export function Component() {
     setUserToDelete(null);
   };
 
-  const columns = useMemo<GridColDef[]>(
-    () => [
-      { field: 'name', headerName: 'Name', flex: 1, minWidth: 160 },
-      { field: 'email', headerName: 'Email', flex: 1.4, minWidth: 220 },
-      { field: 'role', headerName: 'Role', flex: 1, minWidth: 150 },
-      {
-        field: 'status',
-        headerName: 'Status',
-        flex: 0.8,
-        minWidth: 120,
-        renderCell: (params) => (
-          <Chip
-            label={params.value}
-            size="small"
-            color={params.value === UserStatus.ACTIVE ? 'success' : 'default'}
-            variant="outlined"
-          />
-        ),
-      },
-      {
-        field: 'actions',
-        type: 'actions',
-        headerName: 'Actions',
-        width: 120,
-        getActions: (params) => [
-          <GridActionsCellItem
-            key="edit"
-            icon={<Icon name="pencil-simple" />}
-            label="Edit"
-            onClick={() => openEditDialog(params.row as User)}
-          />,
-          <GridActionsCellItem
-            key="delete"
-            icon={<Icon name="trash" />}
-            label="Delete"
-            onClick={() => setUserToDelete(params.row as User)}
-          />,
-        ],
-      },
-    ],
-    [],
-  );
+  const columns: GridColDef[] = [
+    { field: 'name', headerName: 'Name', flex: 1, minWidth: 160 },
+    { field: 'email', headerName: 'Email', flex: 1.4, minWidth: 220 },
+    { field: 'role', headerName: 'Role', flex: 1, minWidth: 150 },
+    {
+      field: 'status',
+      headerName: 'Status',
+      flex: 0.8,
+      minWidth: 120,
+      renderCell: (params) => (
+        <Chip
+          label={params.value}
+          size="small"
+          color={params.value === UserStatus.ACTIVE ? 'success' : 'default'}
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      field: 'actions',
+      type: 'actions',
+      headerName: 'Actions',
+      width: 120,
+      getActions: (params) => [
+        <GridActionsCellItem
+          key="edit"
+          icon={<Icon name="pencil-simple" />}
+          label="Edit"
+          onClick={() => openEditDialog(params.row as User)}
+        />,
+        <GridActionsCellItem
+          key="delete"
+          icon={<Icon name="trash" />}
+          label="Delete"
+          onClick={() => setUserToDelete(params.row as User)}
+        />,
+      ],
+    },
+  ];
 
-  const toolbarButtons = useMemo<ToolbarButtonConfig[]>(
-    () => [
-      {
-        id: 'add-user',
-        icon: <Icon name="plus" />,
-        label: 'Add User',
-        tooltip: 'Add a new user',
-        color: 'primary',
-        onClick: openAddDialog,
-      },
-    ],
-    [],
-  );
+  const toolbarButtons: ToolbarButtonConfig[] = [
+    {
+      id: 'add-user',
+      icon: <Icon name="plus" />,
+      label: 'Add User',
+      tooltip: 'Add a new user',
+      color: 'primary',
+      onClick: openAddDialog,
+    },
+  ];
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, height: '100%' }}>

@@ -11,21 +11,21 @@ import { SkillApi } from '@/boilerplate/cmsApis/apis/skill-api';
 import { SystemConfigurationApi } from '@/boilerplate/cmsApis/apis/system-configuration-api';
 import { UserApi } from '@/boilerplate/cmsApis/apis/user-api';
 import { Configuration as CmsConfiguration } from '@/boilerplate/cmsApis/configuration';
-import { axiosInstance } from '.';
+import { apiClient } from '.';
 
 export const cmsConfiguration = new CmsConfiguration({});
 
 export const cmsApis = {
-	acronym: new AcronymApi(cmsConfiguration, undefined, axiosInstance),
-	authentication: new AuthenticationApi(cmsConfiguration, undefined, axiosInstance),
-	campaign: new CampaignApi(cmsConfiguration, undefined, axiosInstance),
-	contactCenter: new ContactCenterApi(cmsConfiguration, undefined, axiosInstance),
-	process: new ProcessApi(cmsConfiguration, undefined, axiosInstance),
-	queue: new QueueApi(cmsConfiguration, undefined, axiosInstance),
-	user: new UserApi(cmsConfiguration, undefined, axiosInstance),
-	skill: new SkillApi(cmsConfiguration, undefined, axiosInstance),
-	dispositionCode: new DispositionCodeApi(cmsConfiguration, undefined, axiosInstance),
-	dispositionPlan: new DispositionPlanApi(cmsConfiguration, undefined, axiosInstance),
-	serverPreference: new ServerPreferenceApi(cmsConfiguration, undefined, axiosInstance),
-	systemConfiguration: new SystemConfigurationApi(cmsConfiguration, undefined, axiosInstance),
+  acronym: new AcronymApi(cmsConfiguration, undefined, apiClient),
+  authentication: new AuthenticationApi(cmsConfiguration, undefined, apiClient),
+  campaign: new CampaignApi(cmsConfiguration, undefined, apiClient),
+  contactCenter: new ContactCenterApi(cmsConfiguration, undefined, apiClient),
+  process: new ProcessApi(cmsConfiguration, undefined, apiClient),
+  queue: new QueueApi(cmsConfiguration, undefined, apiClient),
+  user: new UserApi(cmsConfiguration, undefined, apiClient),
+  skill: new SkillApi(cmsConfiguration, undefined, apiClient),
+  dispositionCode: new DispositionCodeApi(cmsConfiguration, undefined, apiClient),
+  dispositionPlan: new DispositionPlanApi(cmsConfiguration, undefined, apiClient),
+  serverPreference: new ServerPreferenceApi(cmsConfiguration, undefined, apiClient),
+  systemConfiguration: new SystemConfigurationApi(cmsConfiguration, undefined, apiClient),
 } as const;

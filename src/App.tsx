@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { RouterProvider } from 'react-router-dom';
-import { ExotelThemeProvider } from '@exotel-npm-dev/signal-design-system';
+import { ExotelThemeProvider, ToastProvider } from '@exotel-npm-dev/signal-design-system';
 import { store, persistor } from './store';
 import { router } from './app/router';
 import { theme } from './configs/theme.config';
@@ -19,7 +19,9 @@ function App() {
       <PersistGate loading={null} persistor={persistor}>
         <AppProviders>
           <ExotelThemeProvider defaultMode="system" themeOverrides={theme}>
-            <RouterProvider router={router} />
+            <ToastProvider offset={100}>
+              <RouterProvider router={router} />
+            </ToastProvider>
           </ExotelThemeProvider>
         </AppProviders>
       </PersistGate>

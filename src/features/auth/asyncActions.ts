@@ -1,12 +1,12 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { axiosInstance, setAuthorizationHeader, setSessionId } from "@/services/apiClient";
-import type { IRefreshTokenResponse, IKeepAliveWithPingPushRequestInputBean, ILoginRequestInputBean, ILogoutRequestInputBean, IRefreshTokenRequestInputBean, LoginResponse } from "./types";
+import { apiClient, setAuthorizationHeader, setSessionId } from "@/services/apiClient";
+import type { ILoginApiErrorData, ILoginRejectValue, IRefreshTokenResponse, IKeepAliveWithPingPushRequestInputBean, ILoginRequestInputBean, ILogoutRequestInputBean, IRefreshTokenRequestInputBean, LoginResponse } from "./types";
 
-export const login = createAsyncThunk<LoginResponse, ILoginRequestInputBean>(
+export const login = createAsyncThunk<LoginResponse, ILoginRequestInputBean, { rejectValue: ILoginRejectValue }>(
   "auth/login",
   async (input, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post<LoginResponse>(
+      const response = await apiClient.post<LoginResponse>(
         "/ameyorestapi/userLogin/login",
         input,
       );
@@ -16,9 +16,11 @@ export const login = createAsyncThunk<LoginResponse, ILoginRequestInputBean>(
 
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || error.message || "Login failed",
-      );
+      const data: ILoginApiErrorData | undefined = error.response?.data;
+      return rejectWithValue({
+        message: data?.message || error.message || "Login failed",
+        errorCode: data?.errorCode ?? null,
+      });
     }
   },
 );
@@ -27,7 +29,7 @@ export const logout = createAsyncThunk<unknown, ILogoutRequestInputBean>(
   "auth/logout",
   async (input, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post<unknown>(
+      const response = await apiClient.post<unknown>(
         "/ameyorestapi/session/userLogout",
         input
       )
@@ -45,7 +47,7 @@ export const keepAliveWithPingPush = createAsyncThunk<unknown, IKeepAliveWithPin
   "auth/keepAliveWithPingPush",
   async (input, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post<unknown>(
+      const response = await apiClient.post<unknown>(
         "/ameyorestapi/session/keepAliveWithPingPush",
         input
       )
@@ -63,7 +65,7 @@ export const refreshToken = createAsyncThunk<IRefreshTokenResponse, IRefreshToke
   "auth/refreshToken",
   async (input, { rejectWithValue}) => {
     try {
-      const response = await axiosInstance.post<IRefreshTokenResponse>(
+      const response = await apiClient.post<IRefreshTokenResponse>(
         "/ameyorestapi/session/refreshToken",
         input
       )

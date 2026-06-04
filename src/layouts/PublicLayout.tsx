@@ -1,7 +1,19 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { Box } from '@exotel-npm-dev/signal-design-system';
+import { useAppSelector } from '@/store/hooks';
+import { selectLoginResponse } from '@/features/auth/authSlice';
+import { useEffect } from 'react';
 
 export function PublicLayout() {
+  const loginResponse = useAppSelector(selectLoginResponse);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (loginResponse) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [])
+
   return (
     <Box minHeight="100vh" display="flex" flexDirection="column">
       <Outlet />

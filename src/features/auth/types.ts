@@ -124,7 +124,9 @@ export interface ILoginRequestInputBean {
 }
 
 export const UserType = {
-    ADMIN: 'Administrator',
+  ADMIN: 'Administrator',
+  SUPERVISOR: 'Supervisor',
+  EXECUTIVE: 'Executive'
 } as const;
 
 export type UserType = (typeof UserType)[keyof typeof UserType];
@@ -147,4 +149,26 @@ export interface IRefreshTokenRequestInputBean {
 
 export interface IRefreshTokenResponse {
     jwtToken: string;
+}
+
+export interface ILoginErrorResponse {
+    timestamp: string
+    path: string
+    status: number
+    error: string
+    requestId: string
+}
+
+/** Shape of the error payload returned by the login API. */
+export interface ILoginApiErrorData {
+    message: string | null
+    info: string | null
+    status: number
+    errorCode: number
+}
+
+/** Value passed to `rejectWithValue` when the login thunk fails. */
+export interface ILoginRejectValue {
+    message: string
+    errorCode: number | null
 }
