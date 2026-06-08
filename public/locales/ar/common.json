@@ -20,5 +20,10 @@
     "pageNotLoaded": "تعذّر تحميل الصفحة التي تبحث عنها.",
     "unexpectedError": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
     "reload": "إعادة تحميل",
-    "goToHome": "الذهاب إلى الرئيسية"
+    "goToHome": "الذهاب إلى الرئيسية",
+    "processEmptyStateAlt": "أنشئ عمليتك الأولى",
+    "processEmptyStateTitle": "ابدأ بعمليتك الأولى",
+    "processEmptyStateDescription": "تساعد العمليات في هيكلة العمليات التجارية وإدارة الحملات ذات الصلة.",
+    "processEmptyStateAiPlaceholder": "صِف عمليتك التجارية",
+    "processEmptyStateCreateButton": "إنشاء عملية"
 }

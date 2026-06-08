@@ -21,6 +21,7 @@ export const routes: RouteObject[] = [
       { path: '/queues', lazy: () => import('../features/queues/pages/QueuesPage') },
       { path: '/audit', lazy: () => import('../features/audit/pages/AuditLogsPage') },
       { path: '/settings', lazy: () => import('../features/settings/pages/SettingsPage') },
+      { path: '/process', lazy: () => import('../features/process/pages/ProcessPage') },
       { path: '/help', lazy: () => import('../features/help/pages/HelpPage') },
       {
         element: <RoleGuard allowedRoles={[UserType.SUPERVISOR]} />,

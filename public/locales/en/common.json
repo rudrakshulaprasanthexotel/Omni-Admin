@@ -20,5 +20,10 @@
     "pageNotLoaded": "The page you are looking for could not be loaded.",
     "unexpectedError": "An unexpected error occurred. Please try again.",
     "reload": "Reload",
-    "goToHome": "Go to Home"
+    "goToHome": "Go to Home",
+    "processEmptyStateAlt": "Create your first process",
+    "processEmptyStateTitle": "Get started with your first process",
+    "processEmptyStateDescription": "Processes help structure business operations and manage related campaigns.",
+    "processEmptyStateAiPlaceholder": "Describe your business process",
+    "processEmptyStateCreateButton": "Create Process"
 }
