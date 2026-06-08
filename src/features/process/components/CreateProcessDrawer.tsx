@@ -10,8 +10,9 @@ import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectContactCenterId } from '@/features/auth/authSlice';
 import { createProcess, getAllTableDefinitions } from '../asyncActions';
-import { selectCreateProcessLoading } from '../processSlice';
+import { selectCreateProcessLoading, selectGetTableDefinitionsLoading, selectTableDefinitions } from '../processSlice';
 import type { CreateProcessFormValues } from '../types';
+import LoadingOverlay from '@/shared/components/feedback/LoadingOverlay';
 
 interface CreateProcessDrawerProps {
   open: boolean;
@@ -24,16 +25,13 @@ const EMPTY_FORM: CreateProcessFormValues = {
   tableDefinitionId: '',
 };
 
-const TABLE_DEFINITIONS = [
-  { id: 1, name: 'Default Table' },
-  { id: 2, name: 'Custom Table' },
-];
-
 const CreateProcessDrawer = ({ open, onClose }: CreateProcessDrawerProps) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const contactCenterId = useAppSelector(selectContactCenterId);
   const loading = useAppSelector(selectCreateProcessLoading);
+  const tableDefinitionsLoading = useAppSelector(selectGetTableDefinitionsLoading);
+  const tableDefinitions = useAppSelector(selectTableDefinitions);
 
   const [values, setValues] = useState<CreateProcessFormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof CreateProcessFormValues, string>>>({});
@@ -107,41 +105,44 @@ const CreateProcessDrawer = ({ open, onClose }: CreateProcessDrawerProps) => {
         </>
       }
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <EnhancedTextField
-          label={t('processNameLabel')}
-          placeholder={t('processNamePlaceholder')}
-          value={values.processName}
-          onChange={(e) => updateField('processName', e.target.value)}
-          error={Boolean(errors.processName)}
-          helperText={errors.processName}
-          required
-        />
-        <EnhancedTextField
-          label={t('processDescriptionLabel')}
-          placeholder={t('processDescriptionPlaceholder')}
-          value={values.description}
-          onChange={(e) => updateField('description', e.target.value)}
-          multiline
-          minRows={3}
-        />
-        <EnhancedTextField
-          label={t('tableDefinitionLabel')}
-          placeholder={t('tableDefinitionPlaceholder')}
-          select
-          value={values.tableDefinitionId}
-          onChange={(e) => updateField('tableDefinitionId', Number(e.target.value))}
-          error={Boolean(errors.tableDefinitionId)}
-          helperText={errors.tableDefinitionId}
-          required
-        >
-          {TABLE_DEFINITIONS.map((td) => (
-            <MenuItem key={td.id} value={td.id}>
-              {td.name}
-            </MenuItem>
-          ))}
-        </EnhancedTextField>
-      </Box>
+      <>
+        {tableDefinitionsLoading && <LoadingOverlay loading={tableDefinitionsLoading} />}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <EnhancedTextField
+            label={t('processNameLabel')}
+            placeholder={t('processNamePlaceholder')}
+            value={values.processName}
+            onChange={(e) => updateField('processName', e.target.value)}
+            error={Boolean(errors.processName)}
+            helperText={errors.processName}
+            required
+          />
+          <EnhancedTextField
+            label={t('processDescriptionLabel')}
+            placeholder={t('processDescriptionPlaceholder')}
+            value={values.description}
+            onChange={(e) => updateField('description', e.target.value)}
+            multiline
+            minRows={3}
+          />
+          <EnhancedTextField
+            label={t('tableDefinitionLabel')}
+            placeholder={t('tableDefinitionPlaceholder')}
+            select
+            value={values.tableDefinitionId}
+            onChange={(e) => updateField('tableDefinitionId', Number(e.target.value))}
+            error={Boolean(errors.tableDefinitionId)}
+            helperText={errors.tableDefinitionId}
+            required
+          >
+            {tableDefinitions.map((td) => (
+              <MenuItem key={td.tableDefinitionId} value={td.tableDefinitionId}>
+                {td.tableDefinitionName}
+              </MenuItem>
+            ))}
+          </EnhancedTextField>
+        </Box>
+      </>
     </Drawer>
   );
 };

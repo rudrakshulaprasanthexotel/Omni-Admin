@@ -1,6 +1,6 @@
-import type { Process } from "@/boilerplate/cmsApis/models";
+import type { Process, TableDefinition } from "@/boilerplate/cmsApis/models";
 import type { NormalisedAxiosResponse } from "@/shared/utils/normaliseAxiosResponse";
-import { createProcess, getProcessList } from "./asyncActions";
+import { createProcess, getAllTableDefinitions, getProcessList } from "./asyncActions";
 import { createSlice } from "@reduxjs/toolkit";
 import type { RootState } from "@/store";
 
@@ -10,6 +10,9 @@ interface ProcessState {
   getProcessListError: NormalisedAxiosResponse | null;
   createProcessLoading: boolean;
   createProcessError: NormalisedAxiosResponse | null;
+  tableDefinitions: TableDefinition[];
+  getTableDefinitionsLoading: boolean;
+  getTableDefinitionsError: NormalisedAxiosResponse | null;
 }
 
 const initialState: ProcessState = {
@@ -18,6 +21,9 @@ const initialState: ProcessState = {
   getProcessListError: null,
   createProcessLoading: false,
   createProcessError: null,
+  tableDefinitions: [],
+  getTableDefinitionsLoading: false,
+  getTableDefinitionsError: null,
 };
 
 const processSlice = createSlice({
@@ -55,6 +61,18 @@ const processSlice = createSlice({
       .addCase(createProcess.rejected, (state, action) => {
         state.createProcessLoading = false;
         state.createProcessError = action.payload ?? null;
+      })
+      .addCase(getAllTableDefinitions.pending, (state) => {
+        state.getTableDefinitionsLoading = true;
+        state.getTableDefinitionsError = null;
+      })
+      .addCase(getAllTableDefinitions.fulfilled, (state, action) => {
+        state.getTableDefinitionsLoading = false;
+        state.tableDefinitions = action.payload.response?.data ?? [];
+      })
+      .addCase(getAllTableDefinitions.rejected, (state, action) => {
+        state.getTableDefinitionsLoading = false;
+        state.getTableDefinitionsError = action.payload ?? null;
       });
   },
 });
@@ -64,5 +82,8 @@ export const { clearCreateProcessError } = processSlice.actions;
 export const selectProcessList = (state: RootState) => state.process.processList;
 export const selectCreateProcessLoading = (state: RootState) => state.process.createProcessLoading;
 export const selectCreateProcessError = (state: RootState) => state.process.createProcessError;
+export const selectTableDefinitions = (state: RootState) => state.process.tableDefinitions;
+export const selectGetTableDefinitionsLoading = (state: RootState) => state.process.getTableDefinitionsLoading;
+export const selectGetTableDefinitionsError = (state: RootState) => state.process.getTableDefinitionsError;
 
 export default processSlice.reducer;
