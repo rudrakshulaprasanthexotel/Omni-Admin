@@ -3,6 +3,7 @@ import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosErr
 import AmeyoLogger from '@/services/ameyoLogger/logger';
 import { store } from '@/store';
 import { refreshToken } from '@/features/auth/asyncActions';
+import { clearLoginResponse } from '@/features/auth/authSlice';
 
 const logger = AmeyoLogger.get('ApiClient');
 
@@ -38,9 +39,10 @@ async function refreshAuthToken(): Promise<string> {
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError<any>) => {
-    const originalRequest = error.config as
+    const originalRequest = structuredClone(error.config) as
 			| (InternalAxiosRequestConfig & { _retry?: boolean })
 			| undefined;
+    
     const status = error.response?.status;
     const isRefreshCall = originalRequest?.url?.includes(REFRESH_TOKEN_URL);
     const isLoginCall = originalRequest?.url?.includes(LOGIN_URL);
@@ -74,6 +76,7 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         refreshPromise = null;
+        store.dispatch(clearLoginResponse());
         logger.error('Token refresh failed:', refreshError);
         return Promise.reject(refreshError);
       }

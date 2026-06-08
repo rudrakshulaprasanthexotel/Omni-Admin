@@ -14,5 +14,11 @@
     "carouselInsightsTitle": "Real-Time Insights",
     "carouselInsightsDescription": "Monitor agent performance and queue metrics as they happen",
     "carouselCollaborationTitle": "Seamless Collaboration",
-    "carouselCollaborationDescription": "Connect teams across channels for faster resolution"
+    "carouselCollaborationDescription": "Connect teams across channels for faster resolution",
+    "loading": "Loading...",
+    "somethingWentWrong": "Something went wrong",
+    "pageNotLoaded": "The page you are looking for could not be loaded.",
+    "unexpectedError": "An unexpected error occurred. Please try again.",
+    "reload": "Reload",
+    "goToHome": "Go to Home"
 }

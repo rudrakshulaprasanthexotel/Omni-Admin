@@ -14,5 +14,11 @@
     "carouselInsightsTitle": "رؤى في الوقت الفعلي",
     "carouselInsightsDescription": "مراقبة أداء الوكلاء ومقاييس قوائم الانتظار فور حدوثها",
     "carouselCollaborationTitle": "تعاون سلس",
-    "carouselCollaborationDescription": "ربط الفرق عبر القنوات لحل أسرع"
+    "carouselCollaborationDescription": "ربط الفرق عبر القنوات لحل أسرع",
+    "loading": "جارٍ التحميل...",
+    "somethingWentWrong": "حدث خطأ ما",
+    "pageNotLoaded": "تعذّر تحميل الصفحة التي تبحث عنها.",
+    "unexpectedError": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
+    "reload": "إعادة تحميل",
+    "goToHome": "الذهاب إلى الرئيسية"
 }
