@@ -14,6 +14,11 @@ export default defineConfig(({ mode }) => {
       changeOrigin: true,
       secure: false,
     },
+    [env.VITE_CMS_API_BASE_PATH]: {
+      target: env.VITE_API_BASE_URL,
+      changeOrigin: true,
+      secure: false,
+    },
   };
 
   return {
