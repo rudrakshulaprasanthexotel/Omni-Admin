@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
+import noHardcodedColors from './eslint-plugins/no-hardcoded-colors.js'
 
 export default defineConfig([
   globalIgnores(['dist', 'src/boilerplate']),
@@ -18,7 +19,11 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    plugins: {
+      'custom-colors': noHardcodedColors,
+    },
     rules: {
+      'custom-colors/no-hardcoded-colors': 'error',
       'indent': ['error', 2],
       '@typescript-eslint/no-explicit-any': 'off',
       'react-hooks/exhaustive-deps': 'off',

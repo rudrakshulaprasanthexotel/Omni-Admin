@@ -44,7 +44,7 @@ const CopilotPanel = ({ open, onClose }: CopilotPanelProps) => {
           {messages.length === 0 ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Icon name="sparkle" weight="fill" color="#7C4DFF" />
+                <Icon name="sparkle" weight="fill" color="custom.copilotAccent" />
                 <Typography variant="h6">Hello! How can I help?</Typography>
               </Box>
               <Typography variant="body1" color="text.secondary">

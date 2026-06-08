@@ -73,7 +73,7 @@ const ProcessEmptyState = ({ onCreateProcess }: ProcessEmptyStateProps) => {
           px: 1.5,
           py: 1,
           bgcolor: 'background.paper',
-          boxShadow: '0px 4px 8px -2px rgba(10,13,18,0.1), 0px 2px 4px -2px rgba(0,0,0,0.06)',
+          boxShadow: (theme) => theme.palette.custom.aiInputBoxShadow,
         }}
       >
         <Box
@@ -82,12 +82,11 @@ const ProcessEmptyState = ({ onCreateProcess }: ProcessEmptyStateProps) => {
             height: 24,
             borderRadius: '5px',
             flexShrink: 0,
-            background: 'linear-gradient(219deg, #394FB6 5%, #5E79D5 51%, #394FB6 96%)',
+            background: (theme) => theme.palette.custom.aiIconGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow:
-              '0px 0.625px 0.625px -0.313px rgba(10,13,18,0.13), 0px 0.625px 1.875px 0px rgba(10,13,18,0.1)',
+            boxShadow: (theme) => theme.palette.custom.aiIconBoxShadow,
           }}
         >
           <Icon name="sparkle" size="xs" />
