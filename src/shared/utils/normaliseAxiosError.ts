@@ -8,18 +8,18 @@ interface NormalisedRequestInfo {
   data: unknown;
 }
 
-interface NormalisedResponseInfo {
+interface NormalisedResponseInfo<D = any> {
   status: number | undefined;
   statusText: string | undefined;
   headers: Record<string, string> | undefined;
-  data: unknown;
+  data: D;
 }
 
-export interface NormalisedAxiosError {
+export interface NormalisedAxiosError<D = any> {
   message: string;
   code?: string | undefined;
   request?: NormalisedRequestInfo;
-  response?: NormalisedResponseInfo;
+  response?: NormalisedResponseInfo<D>;
 }
 
 export function normaliseAxiosError(error: AxiosError): NormalisedAxiosError {

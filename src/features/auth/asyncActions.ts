@@ -9,6 +9,11 @@ export const login = createAsyncThunk<LoginResponse, ILoginRequestInputBean, { r
       const response = await apiClient.post<LoginResponse>(
         "/ameyorestapi/userLogin/login",
         input,
+        {
+          headers: {
+            Authorization: undefined
+          }
+        }
       );
 
       setSessionId(response.data.userSessionInfo.sessionId);

@@ -25,5 +25,15 @@
     "processEmptyStateTitle": "Get started with your first process",
     "processEmptyStateDescription": "Processes help structure business operations and manage related campaigns.",
     "processEmptyStateAiPlaceholder": "Describe your business process",
-    "processEmptyStateCreateButton": "Create Process"
+    "processEmptyStateCreateButton": "Create Process",
+    "createProcessTitle": "Create Process",
+    "processNameLabel": "Process Name",
+    "processNamePlaceholder": "Enter the name",
+    "processNameRequired": "Process name is required",
+    "processDescriptionLabel": "Process Description",
+    "processDescriptionPlaceholder": "Enter Description",
+    "tableDefinitionLabel": "Table Definition",
+    "tableDefinitionPlaceholder": "Select",
+    "tableDefinitionRequired": "Table definition is required",
+    "save": "Save"
 }

@@ -41,18 +41,15 @@ export function setupApiClientInterceptors(store: Store<RootState>): void {
   apiClient.interceptors.response.use(
     (response: AxiosResponse) => response,
     async (error: AxiosError<any>) => {
-      const originalRequest = structuredClone(error.config) as
-        | (InternalAxiosRequestConfig & { _retry?: boolean })
-        | undefined;
+      const originalRequest = error.config
+        ? ({ ...error.config } as InternalAxiosRequestConfig & { _retry?: boolean })
+        : undefined;
       
       const status = error.response?.status;
       const isRefreshCall = originalRequest?.url?.includes(REFRESH_TOKEN_URL);
       const isLoginCall = originalRequest?.url?.includes(LOGIN_URL);
-      // Only authenticated requests with an existing session can be refreshed.
-      // Login failures have no session yet and must surface their real error.
       const hasSession = Boolean(store.getState()?.auth?.loginResponse?.userSessionInfo?.sessionId);
   
-      // On 401, refresh the JWT once and replay the original request with it.
       if (
         status === 401 &&
         originalRequest &&
