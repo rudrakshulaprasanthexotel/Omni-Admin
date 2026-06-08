@@ -1,5 +1,5 @@
 import type { Process } from "@/boilerplate/cmsApis/models";
-import type { NormalisedAxiosError } from "@/shared/utils/normaliseAxiosError";
+import type { NormalisedAxiosResponse } from "@/shared/utils/normaliseAxiosResponse";
 import { createProcess, getProcessList } from "./asyncActions";
 import { createSlice } from "@reduxjs/toolkit";
 import type { RootState } from "@/store";
@@ -7,9 +7,9 @@ import type { RootState } from "@/store";
 interface ProcessState {
   processList: Process[];
   getProcessListLoading: boolean;
-  getProcessListError: NormalisedAxiosError | null;
+  getProcessListError: NormalisedAxiosResponse | null;
   createProcessLoading: boolean;
-  createProcessError: NormalisedAxiosError | null;
+  createProcessError: NormalisedAxiosResponse | null;
 }
 
 const initialState: ProcessState = {
@@ -36,11 +36,11 @@ const processSlice = createSlice({
       })
       .addCase(getProcessList.fulfilled, (state, action) => {
         state.getProcessListLoading = false;
-        state.processList = action.payload;
+        state.processList = action.payload.response?.data ?? [];
       })
       .addCase(getProcessList.rejected, (state, action) => {
         state.getProcessListLoading = false;
-        state.getProcessListError = action.payload;
+        state.getProcessListError = action.payload ?? null;
       })
       .addCase(createProcess.pending, (state) => {
         state.createProcessLoading = true;
@@ -48,11 +48,13 @@ const processSlice = createSlice({
       })
       .addCase(createProcess.fulfilled, (state, action) => {
         state.createProcessLoading = false;
-        state.processList.push(action.payload);
+        if (action.payload.response?.data) {
+          state.processList.push(action.payload.response.data);
+        }
       })
       .addCase(createProcess.rejected, (state, action) => {
         state.createProcessLoading = false;
-        state.createProcessError = action.payload;
+        state.createProcessError = action.payload ?? null;
       });
   },
 });

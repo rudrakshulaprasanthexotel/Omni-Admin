@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import type { LoginResponse } from "./types";
+import type { ILoginApiErrorData, LoginResponse } from "./types";
 import { login, refreshToken } from "./asyncActions";
 import type { RootState } from "@/store";
 
@@ -36,19 +36,20 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.loginLoading = false;
-        state.loginResponse = action.payload;
+        state.loginResponse = action.payload.response?.data ?? null;
         state.loginError = null;
         state.loginErrorCode = null;
       })
       .addCase(login.rejected, (state, action) => {
         state.loginLoading = false;
+        const errorData = action.payload?.response?.data as ILoginApiErrorData | undefined;
         state.loginError = action.payload?.message ?? action.error.message ?? "Login failed";
-        state.loginErrorCode = action.payload?.errorCode ?? null;
+        state.loginErrorCode = errorData?.errorCode ?? null;
       })
       .addCase(refreshToken.fulfilled, (state, action) => {
         if (state.loginResponse) {
           state.loginResponse.authenticationState.authPolicyVsUserInfo["auth.type.passwd"].loginProperties.jwt =
-            action?.payload?.jwtToken ?? "";
+            action.payload.response?.data?.jwtToken ?? "";
         }
       })
   },

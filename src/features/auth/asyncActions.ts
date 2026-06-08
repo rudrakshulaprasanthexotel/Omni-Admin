@@ -1,8 +1,10 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { apiClient, setAuthorizationHeader, setSessionId } from "@/services/apiClient";
-import type { ILoginApiErrorData, ILoginRejectValue, IRefreshTokenResponse, IKeepAliveWithPingPushRequestInputBean, ILoginRequestInputBean, ILogoutRequestInputBean, IRefreshTokenRequestInputBean, LoginResponse } from "./types";
+import { normaliseAxiosResponse, type NormalisedAxiosResponse } from "@/shared/utils/normaliseAxiosResponse";
+import type { IRefreshTokenResponse, IKeepAliveWithPingPushRequestInputBean, ILoginRequestInputBean, ILogoutRequestInputBean, IRefreshTokenRequestInputBean, LoginResponse } from "./types";
+import { AxiosError } from "axios";
 
-export const login = createAsyncThunk<LoginResponse, ILoginRequestInputBean, { rejectValue: ILoginRejectValue }>(
+export const login = createAsyncThunk<NormalisedAxiosResponse<LoginResponse>, ILoginRequestInputBean, { rejectValue: NormalisedAxiosResponse }>(
   "auth/login",
   async (input, { rejectWithValue }) => {
     try {
@@ -19,69 +21,81 @@ export const login = createAsyncThunk<LoginResponse, ILoginRequestInputBean, { r
       setSessionId(response.data.userSessionInfo.sessionId);
       setAuthorizationHeader(response.data.authenticationState.authPolicyVsUserInfo['auth.type.passwd'].loginProperties.jwt ?? undefined);
 
-      return response.data;
-    } catch (error: any) {
-      const data: ILoginApiErrorData | undefined = error.response?.data;
+      return normaliseAxiosResponse(response, 'success');
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        return rejectWithValue(normaliseAxiosResponse(error, 'error'));
+      }
       return rejectWithValue({
-        message: data?.message || error.message || "Login failed",
-        errorCode: data?.errorCode ?? null,
+        isSuccess: false,
+        message: "Login failed",
       });
     }
   },
 );
 
-export const logout = createAsyncThunk<unknown, ILogoutRequestInputBean>(
+export const logout = createAsyncThunk<NormalisedAxiosResponse, ILogoutRequestInputBean, { rejectValue: NormalisedAxiosResponse }>(
   "auth/logout",
   async (input, { rejectWithValue }) => {
     try {
       const response = await apiClient.post<unknown>(
         "/ameyorestapi/session/userLogout",
         input
-      )
-
-      return response.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || error.message || "Logout failed",
       );
+      return normaliseAxiosResponse(response, 'success');
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        return rejectWithValue(normaliseAxiosResponse(error, 'error'));
+      }
+      return rejectWithValue({
+        isSuccess: false,
+        message: "Logout failed",
+      });
     }
   }
 );
 
-export const keepAliveWithPingPush = createAsyncThunk<unknown, IKeepAliveWithPingPushRequestInputBean>(
+export const keepAliveWithPingPush = createAsyncThunk<NormalisedAxiosResponse, IKeepAliveWithPingPushRequestInputBean, { rejectValue: NormalisedAxiosResponse }>(
   "auth/keepAliveWithPingPush",
   async (input, { rejectWithValue }) => {
     try {
       const response = await apiClient.post<unknown>(
         "/ameyorestapi/session/keepAliveWithPingPush",
         input
-      )
-
-      return response.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || error.message || "Keep alive with ping push failed",
       );
+      return normaliseAxiosResponse(response, 'success');
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        return rejectWithValue(normaliseAxiosResponse(error, 'error'));
+      }
+      return rejectWithValue({
+        isSuccess: false,
+        message: "Keep alive with ping push failed",
+      });
     }
   }
 );
 
-export const refreshToken = createAsyncThunk<IRefreshTokenResponse, IRefreshTokenRequestInputBean>(
+export const refreshToken = createAsyncThunk<NormalisedAxiosResponse<IRefreshTokenResponse>, IRefreshTokenRequestInputBean, { rejectValue: NormalisedAxiosResponse }>(
   "auth/refreshToken",
-  async (input, { rejectWithValue}) => {
+  async (input, { rejectWithValue }) => {
     try {
       const response = await apiClient.post<IRefreshTokenResponse>(
         "/ameyorestapi/session/refreshToken",
         input
-      )
+      );
 
       setAuthorizationHeader(response.data.jwtToken);
 
-      return response.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || error.message || "Refresh token failed",
-      );
+      return normaliseAxiosResponse(response, 'success');
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        return rejectWithValue(normaliseAxiosResponse(error, 'error'));
+      }
+      return rejectWithValue({
+        isSuccess: false,
+        message: "Refresh token failed",
+      });
     }
   }
 );
