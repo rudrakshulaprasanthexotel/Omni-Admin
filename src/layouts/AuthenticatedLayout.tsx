@@ -18,8 +18,8 @@ const AuthenticatedLayout = () => {
           <Box>
             <LeftSidebar />
           </Box>
-          <Box flex={1} bgcolor='surface.elevation0' p={1}>
-            <Box borderRadius={1} height='100%' bgcolor='surface.elevation1' p={1}>
+          <Box flex={1} bgcolor='surface.elevation0' p={0.5}>
+            <Box borderRadius={1} height='100%' bgcolor='surface.elevation1' p={0.5}>
               <Outlet />
             </Box>
           </Box>

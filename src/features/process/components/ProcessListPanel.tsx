@@ -1,0 +1,43 @@
+import { useTranslation } from 'react-i18next';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import {
+  selectProcessList,
+  selectSelectedProcessId,
+  setSelectedProcessId,
+} from '../processSlice';
+import { EntityListPanel, type EntityItem } from '@exotel-npm-dev/signal-design-system';
+
+interface ProcessListPanelProps {
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  onCreateProcess: () => void;
+}
+
+const ProcessListPanel = ({ collapsed, onToggleCollapse, onCreateProcess }: ProcessListPanelProps) => {
+  const { t } = useTranslation();
+  const dispatch = useAppDispatch();
+  const processList = useAppSelector(selectProcessList);
+  const selectedProcessId = useAppSelector(selectSelectedProcessId);
+
+  const items: EntityItem[] = processList.map((process) => ({
+    id: process.processId ?? '',
+    label: process.processName ?? '',
+  }));
+
+  return (
+    <EntityListPanel
+      title={t('processList')}
+      collapsed={collapsed}
+      onToggleCollapse={onToggleCollapse}
+      actionLabel={t('newProcess')}
+      actionIcon="plus"
+      onActionClick={onCreateProcess}
+      items={items}
+      selectedId={selectedProcessId}
+      onItemSelect={(id) => dispatch(setSelectedProcessId(id as number))}
+      emptyMessage={t('noProcessFound')}
+    />
+  );
+};
+
+export default ProcessListPanel;

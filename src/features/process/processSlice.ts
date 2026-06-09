@@ -8,6 +8,7 @@ interface ProcessState {
   processList: Process[];
   getProcessListLoading: boolean;
   getProcessListError: NormalisedAxiosResponse | null;
+  selectedProcessId: number | null;
   createProcessLoading: boolean;
   createProcessError: NormalisedAxiosResponse | null;
   tableDefinitions: TableDefinition[];
@@ -19,6 +20,7 @@ const initialState: ProcessState = {
   processList: [],
   getProcessListLoading: false,
   getProcessListError: null,
+  selectedProcessId: null,
   createProcessLoading: false,
   createProcessError: null,
   tableDefinitions: [],
@@ -33,6 +35,9 @@ const processSlice = createSlice({
     clearCreateProcessError(state) {
       state.createProcessError = null;
     },
+    setSelectedProcessId(state, action: { payload: number | null }) {
+      state.selectedProcessId = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -43,6 +48,9 @@ const processSlice = createSlice({
       .addCase(getProcessList.fulfilled, (state, action) => {
         state.getProcessListLoading = false;
         state.processList = action.payload.response?.data ?? [];
+        if (state.selectedProcessId === null && state.processList.length > 0) {
+          state.selectedProcessId = state.processList[0].processId ?? null;
+        }
       })
       .addCase(getProcessList.rejected, (state, action) => {
         state.getProcessListLoading = false;
@@ -54,8 +62,10 @@ const processSlice = createSlice({
       })
       .addCase(createProcess.fulfilled, (state, action) => {
         state.createProcessLoading = false;
-        if (action.payload.response?.data) {
-          state.processList.push(action.payload.response.data);
+        const created = action.payload.response?.data;
+        if (created) {
+          state.processList.push(created);
+          state.selectedProcessId = created.processId ?? state.selectedProcessId;
         }
       })
       .addCase(createProcess.rejected, (state, action) => {
@@ -77,9 +87,13 @@ const processSlice = createSlice({
   },
 });
 
-export const { clearCreateProcessError } = processSlice.actions;
+export const { clearCreateProcessError, setSelectedProcessId } = processSlice.actions;
 
 export const selectProcessList = (state: RootState) => state.process.processList;
+export const selectSelectedProcessId = (state: RootState) => state.process.selectedProcessId;
+export const selectSelectedProcess = (state: RootState) =>
+  state.process.processList.find((p) => p.processId === state.process.selectedProcessId) ?? null;
+export const selectGetProcessListLoading = (state: RootState) => state.process.getProcessListLoading;
 export const selectCreateProcessLoading = (state: RootState) => state.process.createProcessLoading;
 export const selectCreateProcessError = (state: RootState) => state.process.createProcessError;
 export const selectTableDefinitions = (state: RootState) => state.process.tableDefinitions;
