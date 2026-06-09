@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
-  Icon,
-  IconButton,
+  PageHeader,
   Tab,
   Tabs,
   Typography,
@@ -14,12 +13,8 @@ import { selectSelectedProcess } from '../processSlice';
 const TAB_KEYS = ['campaigns', 'analytics', 'contactDistribution', 'leads', 'crm', 'settings'] as const;
 type ProcessTab = (typeof TAB_KEYS)[number];
 
-interface ProcessDetailViewProps {
-  panelCollapsed?: boolean;
-  onExpandPanel?: () => void;
-}
 
-const ProcessDetailView = ({ panelCollapsed, onExpandPanel }: ProcessDetailViewProps) => {
+const ProcessDetailView = () => {
   const { t } = useTranslation();
   const process = useAppSelector(selectSelectedProcess);
   const [activeTab, setActiveTab] = useState<ProcessTab>('campaigns');
@@ -37,40 +32,10 @@ const ProcessDetailView = ({ panelCollapsed, onExpandPanel }: ProcessDetailViewP
   return (
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Box
-          sx={{
-            overflow: 'hidden',
-            borderTopLeftRadius: '8px',
-            borderTopRightRadius: '8px',
-          }}
-        >
-          <Box sx={{ pt: 1.5, pb: 0.5, px: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {panelCollapsed && onExpandPanel && (
-                <IconButton size="small" onClick={onExpandPanel}>
-                  <Icon name="sidebar" size="sm" />
-                </IconButton>
-              )}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-                <Typography
-                  sx={{
-                    fontSize: 16,
-                    fontWeight: 600,
-                    lineHeight: '24px',
-                    color: 'text.primary',
-                  }}
-                >
-                  {process.processName}
-                </Typography>
-                {process.description && (
-                  <Typography variant="body2" color="text.secondary">
-                    {process.description}
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          </Box>
-        </Box>
+        <PageHeader
+          title={process.processName}
+          subtitle={process.description}
+        />
 
         <Box sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
           <Tabs

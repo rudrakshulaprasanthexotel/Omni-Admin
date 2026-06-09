@@ -33,7 +33,7 @@ export function ProcessPage() {
   }
 
   return (
-    <Box sx={{ height: 'calc(100% + 16px)', m: -1, display: 'flex' }}>
+    <Box sx={{ display: 'flex', height: '100%' }}>
       {hasProcesses ? (
         <>
           <ProcessListPanel
@@ -41,10 +41,7 @@ export function ProcessPage() {
             onToggleCollapse={() => setPanelCollapsed((prev) => !prev)}
             onCreateProcess={() => setDrawerOpen(true)}
           />
-          <ProcessDetailView
-            panelCollapsed={panelCollapsed}
-            onExpandPanel={() => setPanelCollapsed(false)}
-          />
+          <ProcessDetailView />
         </>
       ) : (
         <ProcessEmptyState onCreateProcess={() => setDrawerOpen(true)} />
