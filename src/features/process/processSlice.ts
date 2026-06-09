@@ -1,6 +1,6 @@
-import type { Process, TableDefinition } from "@/boilerplate/cmsApis/models";
+import type { Campaign, Process, TableDefinition } from "@/boilerplate/cmsApis/models";
 import type { NormalisedAxiosResponse } from "@/shared/utils/normaliseAxiosResponse";
-import { createProcess, getAllTableDefinitions, getProcessList } from "./asyncActions";
+import { createCampaign, createProcess, getAllTableDefinitions, getProcessList } from "./asyncActions";
 import { createSlice } from "@reduxjs/toolkit";
 import type { RootState } from "@/store";
 
@@ -14,6 +14,9 @@ interface ProcessState {
   tableDefinitions: TableDefinition[];
   getTableDefinitionsLoading: boolean;
   getTableDefinitionsError: NormalisedAxiosResponse | null;
+  campaignList: Campaign[];
+  createCampaignLoading: boolean;
+  createCampaignError: NormalisedAxiosResponse | null;
 }
 
 const initialState: ProcessState = {
@@ -26,6 +29,9 @@ const initialState: ProcessState = {
   tableDefinitions: [],
   getTableDefinitionsLoading: false,
   getTableDefinitionsError: null,
+  campaignList: [],
+  createCampaignLoading: false,
+  createCampaignError: null,
 };
 
 const processSlice = createSlice({
@@ -34,6 +40,9 @@ const processSlice = createSlice({
   reducers: {
     clearCreateProcessError(state) {
       state.createProcessError = null;
+    },
+    clearCreateCampaignError(state) {
+      state.createCampaignError = null;
     },
     setSelectedProcessId(state, action: { payload: number | null }) {
       state.selectedProcessId = action.payload;
@@ -83,11 +92,26 @@ const processSlice = createSlice({
       .addCase(getAllTableDefinitions.rejected, (state, action) => {
         state.getTableDefinitionsLoading = false;
         state.getTableDefinitionsError = action.payload ?? null;
+      })
+      .addCase(createCampaign.pending, (state) => {
+        state.createCampaignLoading = true;
+        state.createCampaignError = null;
+      })
+      .addCase(createCampaign.fulfilled, (state, action) => {
+        state.createCampaignLoading = false;
+        const created = action.payload.response?.data;
+        if (created) {
+          state.campaignList.push(created);
+        }
+      })
+      .addCase(createCampaign.rejected, (state, action) => {
+        state.createCampaignLoading = false;
+        state.createCampaignError = action.payload ?? null;
       });
   },
 });
 
-export const { clearCreateProcessError, setSelectedProcessId } = processSlice.actions;
+export const { clearCreateProcessError, clearCreateCampaignError, setSelectedProcessId } = processSlice.actions;
 
 export const selectProcessList = (state: RootState) => state.process.processList;
 export const selectSelectedProcessId = (state: RootState) => state.process.selectedProcessId;
@@ -99,5 +123,9 @@ export const selectCreateProcessError = (state: RootState) => state.process.crea
 export const selectTableDefinitions = (state: RootState) => state.process.tableDefinitions;
 export const selectGetTableDefinitionsLoading = (state: RootState) => state.process.getTableDefinitionsLoading;
 export const selectGetTableDefinitionsError = (state: RootState) => state.process.getTableDefinitionsError;
+
+export const selectCampaignList = (state: RootState) => state.process.campaignList;
+export const selectCreateCampaignLoading = (state: RootState) => state.process.createCampaignLoading;
+export const selectCreateCampaignError = (state: RootState) => state.process.createCampaignError;
 
 export default processSlice.reducer;

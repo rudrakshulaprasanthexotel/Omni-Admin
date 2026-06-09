@@ -1,4 +1,4 @@
-import type { TableDefinition, AddProcessRequest, Process } from '@/boilerplate/cmsApis/models';
+import type { TableDefinition, AddProcessRequest, Process, Campaign, AddCampaignRequest } from '@/boilerplate/cmsApis/models';
 import { apiClient } from '@/services/apiClient';
 import { cmsApis } from '@/services/apiClient/cmsApis';
 import { normaliseAxiosResponse, type NormalisedAxiosResponse } from '@/shared/utils/normaliseAxiosResponse';
@@ -36,6 +36,24 @@ export const createProcess = createAsyncThunk<NormalisedAxiosResponse<Process>, 
       return rejectWithValue({
         isSuccess: false,
         message: 'Failed to create process',
+      });
+    }
+  }
+);
+
+export const createCampaign = createAsyncThunk<NormalisedAxiosResponse<Campaign>, AddCampaignRequest, { rejectValue: NormalisedAxiosResponse }>(
+  'process/addCampaign',
+  async (request: AddCampaignRequest, { rejectWithValue }) => {
+    try {
+      const response = await cmsApis.campaign.addCampaign(request);
+      return normaliseAxiosResponse(response, 'success');
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        return rejectWithValue(normaliseAxiosResponse(error, 'error'));
+      }
+      return rejectWithValue({
+        isSuccess: false,
+        message: 'Failed to create campaign',
       });
     }
   }

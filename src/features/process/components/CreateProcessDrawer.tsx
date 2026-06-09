@@ -35,15 +35,12 @@ const CreateProcessDrawer = ({ open, onClose }: CreateProcessDrawerProps) => {
 
   const [values, setValues] = useState<CreateProcessFormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof CreateProcessFormValues, string>>>({});
-  const [wasOpen, setWasOpen] = useState(false);
 
-  if (open && !wasOpen) {
-    setWasOpen(true);
+  const handleClose = () => {
     setValues(EMPTY_FORM);
     setErrors({});
-  } else if (!open && wasOpen) {
-    setWasOpen(false);
-  }
+    onClose();
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -81,7 +78,7 @@ const CreateProcessDrawer = ({ open, onClose }: CreateProcessDrawerProps) => {
           tableDefinitionId: values.tableDefinitionId as number,
         }),
       ).unwrap();
-      onClose();
+      handleClose();
     } catch {
       // error is handled in the slice
     }
@@ -91,12 +88,12 @@ const CreateProcessDrawer = ({ open, onClose }: CreateProcessDrawerProps) => {
     <Drawer
       anchor="right"
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       title={t('createProcessTitle')}
       PaperProps={{ sx: { width: { xs: '100%', sm: 479 } } }}
       footerActions={
         <>
-          <Button variant="outlined" color="inherit" onClick={onClose} disabled={loading}>
+          <Button variant="outlined" color="inherit" onClick={handleClose} disabled={loading}>
             {t('cancel')}
           </Button>
           <Button variant="contained" color="primary" onClick={handleSave} disabled={loading}>

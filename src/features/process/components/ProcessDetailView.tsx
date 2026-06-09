@@ -10,6 +10,7 @@ import {
 import { useAppSelector } from '@/store/hooks';
 import { selectSelectedProcess } from '../processSlice';
 import CampaignEmptyState from './CampaignEmptyState';
+import CreateCampaignDrawer from './CreateCampaignDrawer';
 
 const TAB_KEYS = ['campaigns', 'analytics', 'contactDistribution', 'leads', 'crm', 'settings'] as const;
 type ProcessTab = (typeof TAB_KEYS)[number];
@@ -19,6 +20,7 @@ const ProcessDetailView = () => {
   const { t } = useTranslation();
   const process = useAppSelector(selectSelectedProcess);
   const [activeTab, setActiveTab] = useState<ProcessTab>('campaigns');
+  const [campaignDrawerOpen, setCampaignDrawerOpen] = useState(false);
 
   if (!process) {
     return (
@@ -52,13 +54,19 @@ const ProcessDetailView = () => {
 
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
         {activeTab === 'campaigns' ? (
-          <CampaignEmptyState onCreateCampaign={() => {}} />
+          <CampaignEmptyState onCreateCampaign={() => setCampaignDrawerOpen(true)} />
         ) : (
           <Typography variant="body2" color="text.secondary">
             {t(`processTab_${activeTab}_placeholder`)}
           </Typography>
         )}
       </Box>
+
+      <CreateCampaignDrawer
+        open={campaignDrawerOpen}
+        onClose={() => setCampaignDrawerOpen(false)}
+        processId={process.processId ?? 0}
+      />
     </Box>
   );
 };
