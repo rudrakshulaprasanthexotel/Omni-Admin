@@ -1,6 +1,6 @@
 import type { Campaign, Process, TableDefinition } from "@/boilerplate/cmsApis/models";
 import type { NormalisedAxiosResponse } from "@/shared/utils/normaliseAxiosResponse";
-import { createCampaign, createProcess, getAllTableDefinitions, getProcessList } from "./asyncActions";
+import { createCampaign, createProcess, getAllTableDefinitions, getCampaignList, getProcessList } from "./asyncActions";
 import { createSlice } from "@reduxjs/toolkit";
 import type { RootState } from "@/store";
 
@@ -15,6 +15,8 @@ interface ProcessState {
   getTableDefinitionsLoading: boolean;
   getTableDefinitionsError: NormalisedAxiosResponse | null;
   campaignList: Campaign[];
+  getCampaignListLoading: boolean;
+  getCampaignListError: NormalisedAxiosResponse | null;
   createCampaignLoading: boolean;
   createCampaignError: NormalisedAxiosResponse | null;
 }
@@ -30,6 +32,8 @@ const initialState: ProcessState = {
   getTableDefinitionsLoading: false,
   getTableDefinitionsError: null,
   campaignList: [],
+  getCampaignListLoading: false,
+  getCampaignListError: null,
   createCampaignLoading: false,
   createCampaignError: null,
 };
@@ -46,6 +50,8 @@ const processSlice = createSlice({
     },
     setSelectedProcessId(state, action: { payload: number | null }) {
       state.selectedProcessId = action.payload;
+      state.campaignList = [];
+      state.getCampaignListError = null;
     },
   },
   extraReducers: (builder) => {
@@ -93,6 +99,18 @@ const processSlice = createSlice({
         state.getTableDefinitionsLoading = false;
         state.getTableDefinitionsError = action.payload ?? null;
       })
+      .addCase(getCampaignList.pending, (state) => {
+        state.getCampaignListLoading = true;
+        state.getCampaignListError = null;
+      })
+      .addCase(getCampaignList.fulfilled, (state, action) => {
+        state.getCampaignListLoading = false;
+        state.campaignList = action.payload.response?.data ?? [];
+      })
+      .addCase(getCampaignList.rejected, (state, action) => {
+        state.getCampaignListLoading = false;
+        state.getCampaignListError = action.payload ?? null;
+      })
       .addCase(createCampaign.pending, (state) => {
         state.createCampaignLoading = true;
         state.createCampaignError = null;
@@ -125,6 +143,8 @@ export const selectGetTableDefinitionsLoading = (state: RootState) => state.proc
 export const selectGetTableDefinitionsError = (state: RootState) => state.process.getTableDefinitionsError;
 
 export const selectCampaignList = (state: RootState) => state.process.campaignList;
+export const selectGetCampaignListLoading = (state: RootState) => state.process.getCampaignListLoading;
+export const selectGetCampaignListError = (state: RootState) => state.process.getCampaignListError;
 export const selectCreateCampaignLoading = (state: RootState) => state.process.createCampaignLoading;
 export const selectCreateCampaignError = (state: RootState) => state.process.createCampaignError;
 

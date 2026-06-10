@@ -3,10 +3,12 @@ import { PublicLayout } from '../layouts/PublicLayout';
 import AuthenticatedLayout from '../layouts/AuthenticatedLayout';
 import { RoleGuard } from '@/shared/components/guards/RoleGuard';
 import { UserType } from '@/features/auth/types';
+import HydrateFallback from '@/shared/components/feedback/HydrateFallback';
 
 export const routes: RouteObject[] = [
   {
     element: <PublicLayout />,
+    errorElement: <HydrateFallback />,
     children: [
       { path: '/login', lazy: () => import('../features/auth/pages/LoginPage') },
       { index: true, lazy: () => import('../features/auth/pages/LoginPage') },
@@ -14,6 +16,7 @@ export const routes: RouteObject[] = [
   },
   {
     element: <AuthenticatedLayout />,
+    errorElement: <HydrateFallback />,
     children: [
       { path: '/dashboard', lazy: () => import('../features/dashboard/pages/DashboardPage') },
       { path: '/analytics', lazy: () => import('../features/analytics/pages/AnalyticsPage') },

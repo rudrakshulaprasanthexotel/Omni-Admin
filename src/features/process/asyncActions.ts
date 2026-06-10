@@ -59,6 +59,24 @@ export const createCampaign = createAsyncThunk<NormalisedAxiosResponse<Campaign>
   }
 );
 
+export const getCampaignList = createAsyncThunk<NormalisedAxiosResponse<Campaign[]>, number, { rejectValue: NormalisedAxiosResponse }>(
+  'process/getCampaignList',
+  async (processId: number, { rejectWithValue }) => {
+    try {
+      const response = await cmsApis.process.getAllCampaignsInProcess(processId);
+      return normaliseAxiosResponse(response, 'success');
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        return rejectWithValue(normaliseAxiosResponse(error, 'error'));
+      }
+      return rejectWithValue({
+        isSuccess: false,
+        message: 'Failed to get campaign list',
+      });
+    }
+  }
+);
+
 export const getAllTableDefinitions = createAsyncThunk<NormalisedAxiosResponse<TableDefinition[]>, void, { rejectValue: NormalisedAxiosResponse }>(
   'process/getAllTableDefinitions',
   async (_, { rejectWithValue }) => {

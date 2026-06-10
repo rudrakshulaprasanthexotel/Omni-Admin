@@ -9,12 +9,11 @@ import {
 } from '@exotel-npm-dev/signal-design-system';
 import { useAppSelector } from '@/store/hooks';
 import { selectSelectedProcess } from '../processSlice';
-import CampaignEmptyState from './CampaignEmptyState';
+import CampaignDataGrid from './CampaignDataGrid';
 import CreateCampaignDrawer from './CreateCampaignDrawer';
 
 const TAB_KEYS = ['campaigns', 'analytics', 'contactDistribution', 'leads', 'crm', 'settings'] as const;
 type ProcessTab = (typeof TAB_KEYS)[number];
-
 
 const ProcessDetailView = () => {
   const { t } = useTranslation();
@@ -54,7 +53,10 @@ const ProcessDetailView = () => {
 
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
         {activeTab === 'campaigns' ? (
-          <CampaignEmptyState onCreateCampaign={() => setCampaignDrawerOpen(true)} />
+          <CampaignDataGrid
+            processId={process.processId ?? 0}
+            onCreateCampaign={() => setCampaignDrawerOpen(true)}
+          />
         ) : (
           <Typography variant="body2" color="text.secondary">
             {t(`processTab_${activeTab}_placeholder`)}
