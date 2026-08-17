@@ -11,8 +11,8 @@ const adminNavigationSections: NavSectionProps[] = [
   }
 ]
 
-// eslint-disable-next-line
-const dummyAdminNavigationSections: NavSectionProps[] = [
+/** Full admin nav — restore when those routes ship */
+export const dummyAdminNavigationSections: NavSectionProps[] = [
   {
     label: 'Main',
     items: [
@@ -65,7 +65,7 @@ const LeftSidebar = () => {
     : adminNavigationSections;
 
   const handleNavigate = (item: NavItemPayload) => {
-    navigate(item.path);
+    if (item.path) navigate(item.path);
   };
 
   return (

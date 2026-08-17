@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import {
   Box,
   Button,
   Drawer,
-  EnhancedTextField,
+  TextField,
   MenuItem,
 } from '@exotel-npm-dev/signal-design-system';
 import { useTranslation } from 'react-i18next';
@@ -68,6 +68,7 @@ const CreateProcessDrawer = ({ open, onClose }: CreateProcessDrawerProps) => {
 
   const handleSave = async () => {
     if (!validate()) return;
+    if (contactCenterId == null) return;
 
     try {
       await dispatch(
@@ -105,29 +106,29 @@ const CreateProcessDrawer = ({ open, onClose }: CreateProcessDrawerProps) => {
       <>
         {tableDefinitionsLoading && <LoadingOverlay loading={tableDefinitionsLoading} />}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <EnhancedTextField
+          <TextField
             label={t('processNameLabel')}
             placeholder={t('processNamePlaceholder')}
             value={values.processName}
-            onChange={(e) => updateField('processName', e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('processName', e.target.value)}
             error={Boolean(errors.processName)}
             helperText={errors.processName}
             required
           />
-          <EnhancedTextField
+          <TextField
             label={t('processDescriptionLabel')}
             placeholder={t('processDescriptionPlaceholder')}
             value={values.description}
-            onChange={(e) => updateField('description', e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('description', e.target.value)}
             multiline
             minRows={3}
           />
-          <EnhancedTextField
+          <TextField
             label={t('tableDefinitionLabel')}
             placeholder={t('tableDefinitionPlaceholder')}
             select
             value={values.tableDefinitionId}
-            onChange={(e) => updateField('tableDefinitionId', Number(e.target.value))}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('tableDefinitionId', Number(e.target.value))}
             error={Boolean(errors.tableDefinitionId)}
             helperText={errors.tableDefinitionId}
             required
@@ -137,7 +138,7 @@ const CreateProcessDrawer = ({ open, onClose }: CreateProcessDrawerProps) => {
                 {td.tableDefinitionName}
               </MenuItem>
             ))}
-          </EnhancedTextField>
+          </TextField>
         </Box>
       </>
     </Drawer>

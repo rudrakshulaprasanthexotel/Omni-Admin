@@ -59,7 +59,7 @@ export const selectLoginLoading = (state: RootState) => state.auth.loginLoading;
 export const selectLoginError = (state: RootState) => state.auth.loginError;
 export const selectLoginErrorCode = (state: RootState) => state.auth.loginErrorCode;
 export const selectLoginResponse = (state: RootState) => state.auth.loginResponse;
-export const selectContactCenterId = (state: RootState) => state.auth.loginResponse.contactCenterId;
+export const selectContactCenterId = (state: RootState) => state.auth.loginResponse?.contactCenterId;
 
 export const { clearLoginResponse } = authSlice.actions;
 export default authSlice.reducer;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -42,7 +42,7 @@ const ProcessDetailView = () => {
         <Box sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
           <Tabs
             value={activeTab}
-            onChange={(_, val) => setActiveTab(val as ProcessTab)}
+            onChange={(_: SyntheticEvent, val: string | number) => setActiveTab(val as ProcessTab)}
           >
             {TAB_KEYS.map((key) => (
               <Tab key={key} label={t(`processTab_${key}`)} value={key} />

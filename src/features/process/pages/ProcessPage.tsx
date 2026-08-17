@@ -19,8 +19,9 @@ export function ProcessPage() {
   const [panelCollapsed, setPanelCollapsed] = useState(false);
 
   useEffect(() => {
+    if (contactCenterId == null) return;
     dispatch(getProcessList(contactCenterId));
-  }, []);
+  }, [contactCenterId, dispatch]);
 
   const hasProcesses = processList.length > 0;
 

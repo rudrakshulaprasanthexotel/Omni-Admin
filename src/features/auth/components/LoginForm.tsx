@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState, type ChangeEvent, type SubmitEvent } from 'react';
 import { Box, FormField, Button, IconButton, Icon, Typography, useToast } from '@exotel-npm-dev/signal-design-system';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useNavigate } from 'react-router-dom';
@@ -90,7 +90,7 @@ export function LoginForm() {
             required
             fullWidth
             value={userId}
-            onChange={(e) => setUserId(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setUserId(e.target.value)}
             disabled={loginLoading}
           />
 
@@ -101,7 +101,7 @@ export function LoginForm() {
             fullWidth
             type={showPassword ? 'text' : 'password'}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
             disabled={loginLoading}
             endAdornment={
               <IconButton

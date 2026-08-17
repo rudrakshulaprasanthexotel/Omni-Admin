@@ -5,7 +5,7 @@ import {
   selectSelectedProcessId,
   setSelectedProcessId,
 } from '../processSlice';
-import { EntityListPanel, type EntityItem } from '@exotel-npm-dev/signal-design-system';
+import { SecondaryNavigation, type NavigationItem } from '@exotel-npm-dev/signal-design-system';
 
 interface ProcessListPanelProps {
   collapsed: boolean;
@@ -19,13 +19,13 @@ const ProcessListPanel = ({ collapsed, onToggleCollapse, onCreateProcess }: Proc
   const processList = useAppSelector(selectProcessList);
   const selectedProcessId = useAppSelector(selectSelectedProcessId);
 
-  const items: EntityItem[] = processList.map((process) => ({
+  const items: NavigationItem[] = processList.map((process) => ({
     id: process.processId ?? '',
     label: process.processName ?? '',
   }));
 
   return (
-    <EntityListPanel
+    <SecondaryNavigation
       title={t('processList')}
       collapsed={collapsed}
       onToggleCollapse={onToggleCollapse}
@@ -34,7 +34,7 @@ const ProcessListPanel = ({ collapsed, onToggleCollapse, onCreateProcess }: Proc
       onActionClick={onCreateProcess}
       items={items}
       selectedId={selectedProcessId}
-      onItemSelect={(id) => dispatch(setSelectedProcessId(id as number))}
+      onItemSelect={(id: string | number) => dispatch(setSelectedProcessId(id as number))}
       emptyMessage={t('noProcessFound')}
     />
   );

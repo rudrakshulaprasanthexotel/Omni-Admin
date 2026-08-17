@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import {
   Box,
   Button,
   DialogBody,
   DialogFooter,
-  EnhancedTextField,
+  TextField,
   MenuItem,
   StructuredDialog,
 } from '@exotel-npm-dev/signal-design-system';
@@ -76,27 +76,27 @@ const QueueFormDialog = ({ open, initialQueue, onClose, onSubmit }: QueueFormDia
     >
       <DialogBody>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1 }}>
-          <EnhancedTextField
+          <TextField
             label="Name"
             value={values.name}
-            onChange={(e) => updateField('name', e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('name', e.target.value)}
             error={Boolean(errors.name)}
             helperText={errors.name}
             fullWidth
           />
-          <EnhancedTextField
+          <TextField
             label="Description"
             value={values.description}
-            onChange={(e) => updateField('description', e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('description', e.target.value)}
             multiline
             minRows={2}
             fullWidth
           />
-          <EnhancedTextField
+          <TextField
             label="Routing Strategy"
             select
             value={values.strategy}
-            onChange={(e) => updateField('strategy', e.target.value as RoutingStrategy)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('strategy', e.target.value as RoutingStrategy)}
             fullWidth
           >
             {Object.values(RoutingStrategy).map((strategy) => (
@@ -104,21 +104,21 @@ const QueueFormDialog = ({ open, initialQueue, onClose, onSubmit }: QueueFormDia
                 {strategy}
               </MenuItem>
             ))}
-          </EnhancedTextField>
-          <EnhancedTextField
+          </TextField>
+          <TextField
             label="Assigned Agents"
             type="number"
             value={String(values.agents)}
-            onChange={(e) => updateField('agents', Number(e.target.value))}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('agents', Number(e.target.value))}
             error={Boolean(errors.agents)}
             helperText={errors.agents}
             fullWidth
           />
-          <EnhancedTextField
+          <TextField
             label="Status"
             select
             value={values.status}
-            onChange={(e) => updateField('status', e.target.value as QueueStatus)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('status', e.target.value as QueueStatus)}
             fullWidth
           >
             {Object.values(QueueStatus).map((status) => (
@@ -126,7 +126,7 @@ const QueueFormDialog = ({ open, initialQueue, onClose, onSubmit }: QueueFormDia
                 {status}
               </MenuItem>
             ))}
-          </EnhancedTextField>
+          </TextField>
         </Box>
       </DialogBody>
       <DialogFooter>

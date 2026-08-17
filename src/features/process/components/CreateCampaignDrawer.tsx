@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import {
   Box,
   Button,
   Drawer,
-  EnhancedTextField,
+  TextField,
   MenuItem,
   Typography,
 } from '@exotel-npm-dev/signal-design-system';
@@ -99,30 +99,30 @@ const CreateCampaignDrawer = ({ open, onClose, processId }: CreateCampaignDrawer
       }
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <EnhancedTextField
+        <TextField
           label={t('campaignNameLabel')}
           placeholder={t('campaignNamePlaceholder')}
           value={values.campaignContextName}
-          onChange={(e) => updateField('campaignContextName', e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('campaignContextName', e.target.value)}
           error={Boolean(errors.campaignContextName)}
           helperText={errors.campaignContextName}
           required
         />
-        <EnhancedTextField
+        <TextField
           label={t('campaignDescriptionLabel')}
           placeholder={t('campaignDescriptionPlaceholder')}
           value={values.description}
-          onChange={(e) => updateField('description', e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('description', e.target.value)}
           multiline
           minRows={3}
           required
         />
-        <EnhancedTextField
+        <TextField
           label={t('campaignTemplateLabel')}
           placeholder={t('campaignTemplatePlaceholder')}
           select
           value={values.campaignContextType}
-          onChange={(e) => updateField('campaignContextType', e.target.value as CreateCampaignFormValues['campaignContextType'])}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('campaignContextType', e.target.value as CreateCampaignFormValues['campaignContextType'])}
           error={Boolean(errors.campaignContextType)}
           helperText={errors.campaignContextType}
           required
@@ -132,7 +132,7 @@ const CreateCampaignDrawer = ({ open, onClose, processId }: CreateCampaignDrawer
               <Typography variant="body2">{type.label}</Typography>
             </MenuItem>
           ))}
-        </EnhancedTextField>
+        </TextField>
       </Box>
     </Drawer>
   );

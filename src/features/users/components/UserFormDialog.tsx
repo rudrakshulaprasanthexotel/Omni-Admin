@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import {
   Box,
   Button,
   DialogBody,
   DialogFooter,
-  EnhancedTextField,
+  TextField,
   MenuItem,
   StructuredDialog,
 } from '@exotel-npm-dev/signal-design-system';
@@ -78,28 +78,28 @@ const UserFormDialog = ({ open, initialUser, onClose, onSubmit }: UserFormDialog
     >
       <DialogBody>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1 }}>
-          <EnhancedTextField
+          <TextField
             label="Name"
             value={values.name}
-            onChange={(e) => updateField('name', e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('name', e.target.value)}
             error={Boolean(errors.name)}
             helperText={errors.name}
             fullWidth
           />
-          <EnhancedTextField
+          <TextField
             label="Email"
             type="email"
             value={values.email}
-            onChange={(e) => updateField('email', e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('email', e.target.value)}
             error={Boolean(errors.email)}
             helperText={errors.email}
             fullWidth
           />
-          <EnhancedTextField
+          <TextField
             label="Role"
             select
             value={values.role}
-            onChange={(e) => updateField('role', e.target.value as UserRole)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('role', e.target.value as UserRole)}
             fullWidth
           >
             {Object.values(UserRole).map((role) => (
@@ -107,12 +107,12 @@ const UserFormDialog = ({ open, initialUser, onClose, onSubmit }: UserFormDialog
                 {role}
               </MenuItem>
             ))}
-          </EnhancedTextField>
-          <EnhancedTextField
+          </TextField>
+          <TextField
             label="Status"
             select
             value={values.status}
-            onChange={(e) => updateField('status', e.target.value as UserStatus)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField('status', e.target.value as UserStatus)}
             fullWidth
           >
             {Object.values(UserStatus).map((status) => (
@@ -120,7 +120,7 @@ const UserFormDialog = ({ open, initialUser, onClose, onSubmit }: UserFormDialog
                 {status}
               </MenuItem>
             ))}
-          </EnhancedTextField>
+          </TextField>
         </Box>
       </DialogBody>
       <DialogFooter>
