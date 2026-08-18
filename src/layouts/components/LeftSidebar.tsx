@@ -62,7 +62,7 @@ const LeftSidebar = () => {
 
   const navigationSections = userType === 'supervisor'
     ? supervisorNavigationSections
-    : adminNavigationSections;
+    : dummyAdminNavigationSections;
 
   const handleNavigate = (item: NavItemPayload) => {
     if (item.path) navigate(item.path);
