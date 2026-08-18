@@ -23,7 +23,6 @@ export const routes: RouteObject[] = [
       { path: '/users', lazy: () => import('../features/users/pages/UsersPage') },
       { path: '/queues', lazy: () => import('../features/queues/pages/QueuesPage') },
       { path: '/audit', lazy: () => import('../features/audit/pages/AuditLogsPage') },
-      { path: '/settings', lazy: () => import('../features/settings/pages/SettingsPage') },
       { path: '/process', lazy: () => import('../features/process/pages/ProcessPage') },
       { path: '/help', lazy: () => import('../features/help/pages/HelpPage') },
       {

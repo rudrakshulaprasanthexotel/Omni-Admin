@@ -31,7 +31,6 @@ export const dummyAdminNavigationSections: NavSectionProps[] = [
   {
     label: 'Preferences',
     items: [
-      { id: 'settings', label: 'Settings', iconName: 'gear', path: '/settings' },
       { id: 'help', label: 'Help', iconName: 'question', path: '/help' },
     ],
   },
@@ -49,7 +48,6 @@ const supervisorNavigationSections: NavSectionProps[] = [
   {
     label: 'Preferences',
     items: [
-      { id: 'settings', label: 'Settings', iconName: 'gear', path: '/settings', openNewPage: false },
       { id: 'help', label: 'Help', iconName: 'question', path: '/help', openNewPage: false },
     ],
   },
