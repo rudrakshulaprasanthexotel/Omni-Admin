@@ -1,0 +1,55 @@
+import { useEffect, useState } from 'react';
+import { Box } from '@exotel-npm-dev/signal-design-system';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { selectContactCenterId } from '@/features/auth/authSlice';
+import { getProcessList } from '../asyncActions';
+import { selectGetProcessListLoading, selectProcessList } from '../processSlice';
+import ProcessEmptyState from '../components/ProcessEmptyState';
+import ProcessListPanel from '../components/ProcessListPanel';
+import ProcessDetailView from '../components/ProcessDetailView';
+import CreateProcessDrawer from '../components/CreateProcessDrawer';
+import LoadingOverlay from '@/shared/components/feedback/LoadingOverlay';
+
+export function ProcessPage() {
+  const dispatch = useAppDispatch();
+  const contactCenterId = useAppSelector(selectContactCenterId);
+  const processList = useAppSelector(selectProcessList);
+  const loading = useAppSelector(selectGetProcessListLoading);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (contactCenterId == null) return;
+    dispatch(getProcessList(contactCenterId));
+  }, [contactCenterId, dispatch]);
+
+  const hasProcesses = processList.length > 0;
+
+  if (loading && !hasProcesses) {
+    return (
+      <Box sx={{ height: '100%', position: 'relative' }}>
+        <LoadingOverlay loading />
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ display: 'flex', height: '100%' }}>
+      {hasProcesses ? (
+        <>
+          <ProcessListPanel
+            collapsed={panelCollapsed}
+            onToggleCollapse={() => setPanelCollapsed((prev) => !prev)}
+            onCreateProcess={() => setDrawerOpen(true)}
+          />
+          <ProcessDetailView />
+        </>
+      ) : (
+        <ProcessEmptyState onCreateProcess={() => setDrawerOpen(true)} />
+      )}
+      <CreateProcessDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+    </Box>
+  );
+}
+
+export const Component = ProcessPage;

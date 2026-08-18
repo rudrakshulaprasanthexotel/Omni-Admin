@@ -12,14 +12,14 @@ const AuthenticatedLayout = () => {
 
   return (
     <AuthGuard>
-      <Box minHeight="100vh" display="flex" flexDirection="column">
+      <Box height="100vh" display="flex" flexDirection="column">
         <TopNavBar />
-        <Box flex={1} display="flex">
+        <Box flex={1} display="flex" minHeight={0}>
           <Box>
             <LeftSidebar />
           </Box>
-          <Box flex={1} bgcolor='surface.elevation0' p={1}>
-            <Box borderRadius={1} height='100%' bgcolor='surface.elevation1' p={1}>
+          <Box flex={1} bgcolor='surface.elevation0' p={1} overflow='hidden'>
+            <Box borderRadius={1} height='100%' bgcolor='surface.elevation1' overflow='auto'>
               <Outlet />
             </Box>
           </Box>

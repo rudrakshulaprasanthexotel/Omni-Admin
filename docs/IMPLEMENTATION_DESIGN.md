@@ -18,17 +18,18 @@
 8. [Custom Hooks](#8-custom-hooks)
 9. [Logging — js-logger](#9-logging--js-logger)
 10. [Analytics Service](#10-analytics-service)
-11. [Type System](#11-type-system)
-12. [Styling Architecture](#12-styling-architecture)
-13. [Utilities](#13-utilities)
-14. [Pages & Features (Feature-Based)](#14-pages--features)
-15. [Configuration Management](#15-configuration-management)
-16. [API Layer](#16-api-layer)
-17. [Error Handling Strategy](#17-error-handling-strategy)
-18. [Performance Strategy](#18-performance-strategy)
-19. [Testing Strategy](#19-testing-strategy)
-20. [Build & Deployment](#20-build--deployment)
-21. [Dependency Summary](#21-dependency-summary)
+11. [Internationalization (i18n)](#11-internationalization-i18n)
+12. [Type System](#12-type-system)
+13. [Styling Architecture](#13-styling-architecture)
+14. [Utilities](#14-utilities)
+15. [Pages & Features (Feature-Based)](#15-pages--features)
+16. [Configuration Management](#16-configuration-management)
+17. [API Layer](#17-api-layer)
+18. [Error Handling Strategy](#18-error-handling-strategy)
+19. [Performance Strategy](#19-performance-strategy)
+20. [Testing Strategy](#20-testing-strategy)
+21. [Build & Deployment](#21-build--deployment)
+22. [Dependency Summary](#22-dependency-summary)
 
 ---
 
@@ -77,6 +78,8 @@ Layouts are named by **UI pattern** (sidebar, topnav, public), not by role. New 
 | Routing            | `react-router-dom`                    | Client-side routing, nested layouts          |
 | Logging            | `js-logger`                           | Structured logging with configurable levels  |
 | Analytics          | Custom service (internal)             | Event tracking, page views, user metrics     |
+| Internationalization| `i18next` + `react-i18next`          | Runtime i18n with namespace-based JSON bundles|
+| i18n Backend       | `i18next-http-backend`                | Lazy-loads locale JSON files from `/public/locales/` |
 
 ---
 
@@ -102,7 +105,12 @@ omni-admin/
 │
 ├── public/                             # Static assets served as-is
 │   ├── favicon.svg
-│   └── icons.svg
+│   ├── icons.svg
+│   └── locales/                       # i18n translation bundles (loaded at runtime)
+│       ├── en/
+│       │   └── common.json            # English translations (default namespace)
+│       └── ar/
+│           └── common.json            # Arabic translations
 │
 ├── src/
 │   ├── main.tsx                        # Application entry point
@@ -188,6 +196,13 @@ omni-admin/
 │   │   │   │   └── ProfilePage.tsx             # Both roles
 │   │   │   └── index.ts
 │   │   │
+│   │   ├── process/                    # Process management feature
+│   │   │   ├── pages/
+│   │   │   │   └── ProcessPage.tsx            # Process management entry
+│   │   │   ├── components/
+│   │   │   │   └── ProcessEmptyState.tsx      # Empty state with AI prompt & create CTA
+│   │   │   └── index.ts
+│   │   │
 │   │   └── help/                       # Help feature
 │   │       ├── pages/
 │   │       │   └── HelpPage.tsx                # Both roles
@@ -250,6 +265,8 @@ omni-admin/
 │   │   │   ├── client.ts               # Base fetch client with interceptors
 │   │   │   ├── endpoints.ts            # Endpoint URL registry
 │   │   │   └── types.ts                # API-specific types
+│   │   ├── i18n/                       # Internationalization service
+│   │   │   └── index.ts                # i18next initialization & configuration
 │   │   ├── analytics/                  # Analytics service
 │   │   │   ├── AnalyticsService.ts     # Core analytics class
 │   │   │   ├── providers/              # Pluggable providers (internal, GA, etc.)
@@ -269,6 +286,8 @@ omni-admin/
 │   │   └── utilities.css               # Utility classes (spacing, visibility, etc.)
 │   │
 │   └── assets/                         # Imported static assets (images, fonts, etc.)
+│       ├── illustrations/
+│       │   └── process-empty-state.svg # Process feature empty state illustration
 │       ├── hero.png
 │       ├── react.svg
 │       └── vite.svg
@@ -424,6 +443,7 @@ All routes live in a **single routes file** (`src/app/routes.tsx`). There are no
 │  │       │                            → AuditLogPage             │ │
 │  │       ├── /system-settings      → RoleGuard(['admin'])        │ │
 │  │       │                            → SystemSettingsPage       │ │
+│  │       ├── /process              → ProcessPage                 │ │
 │  │       ├── /profile              → RoleGuard(['admin','supv']) │ │
 │  │       │                            → ProfilePage              │ │
 │  │       └── /help                 → RoleGuard(['admin','supv']) │ │
@@ -523,6 +543,10 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, lazy: () => import('../features/settings/pages/SystemSettingsPage') },
         ],
+      },
+      {
+        path: '/process',
+        lazy: () => import('../features/process/pages/ProcessPage'),
       },
       {
         path: '/profile',
@@ -1170,7 +1194,156 @@ trackEvent({
 
 ---
 
-## 11. Type System
+## 11. Internationalization (i18n)
+
+### MANDATORY Rule: All User-Facing Text Must Use i18n
+
+**Every string visible to the user** — headings, labels, buttons, placeholders, tooltips, error messages, `alt` attributes, ARIA labels — **MUST** be translated via the `t()` function from `react-i18next`. Hardcoded user-facing strings are not permitted in any component, page, or layout.
+
+### Library Stack
+
+| Package                | Purpose                                                |
+| ---------------------- | ------------------------------------------------------ |
+| `i18next`              | Core i18n framework — key lookup, interpolation, plurals |
+| `react-i18next`        | React bindings — `useTranslation` hook, `<Trans>` component |
+| `i18next-http-backend` | Lazy-loads locale JSON from `/public/locales/{{lng}}/{{ns}}.json` |
+
+### Configuration (`src/services/i18n/index.ts`)
+
+```tsx
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import Backend from 'i18next-http-backend';
+
+const basePath = import.meta.env.VITE_BASE_URL;
+
+i18n
+  .use(Backend)
+  .use(initReactI18next)
+  .init({
+    lng: 'en',
+    fallbackLng: 'en',
+    ns: ['common'],
+    defaultNS: 'common',
+    fallbackNS: ['common'],
+    keySeparator: false,
+    interpolation: {
+      escapeValue: false,
+    },
+    backend: {
+      loadPath: `${basePath}/locales/{{lng}}/{{ns}}.json`,
+    },
+  });
+
+export default i18n;
+```
+
+### Key Design Decisions
+
+| Decision              | Choice                                        | Rationale                                                    |
+| --------------------- | --------------------------------------------- | ------------------------------------------------------------ |
+| `keySeparator: false` | Flat keys (`processEmptyStateTitle`)           | Avoids nested JSON; keys are descriptive and greppable       |
+| `defaultNS: 'common'` | Single namespace for now                      | Keeps setup simple; split into feature namespaces when >200 keys |
+| HTTP backend          | Locale files loaded at runtime from `/public/` | Locale bundles are not compiled into the JS bundle; can be updated independently |
+| `fallbackLng: 'en'`   | English as fallback                           | Ensures missing translations don't render raw keys in production |
+
+### Translation File Structure
+
+```
+public/locales/
+├── en/
+│   └── common.json      # English (default)
+└── ar/
+    └── common.json      # Arabic
+```
+
+Each JSON file contains flat key-value pairs:
+
+```json
+{
+  "processEmptyStateTitle": "Get started with your first process",
+  "processEmptyStateDescription": "Processes help structure business operations and manage related campaigns.",
+  "processEmptyStateCreateButton": "Create Process"
+}
+```
+
+### Key Naming Convention
+
+Keys follow a **feature-scoped camelCase** pattern:
+
+```
+<feature><Component><Element>
+```
+
+| Example Key                        | Feature   | Component       | Element      |
+| ---------------------------------- | --------- | --------------- | ------------ |
+| `processEmptyStateTitle`           | process   | EmptyState      | Title        |
+| `processEmptyStateCreateButton`    | process   | EmptyState      | CreateButton |
+| `processEmptyStateAiPlaceholder`   | process   | EmptyState      | AiPlaceholder|
+| `signIn`                           | auth      | LoginForm       | SignIn       |
+| `forceLoginTitle`                  | auth      | ForceLoginDialog| Title        |
+
+### Usage in Components
+
+**MANDATORY**: Use the `useTranslation` hook from `react-i18next`. Never hardcode user-facing strings.
+
+```tsx
+import { useTranslation } from 'react-i18next';
+
+function ProcessEmptyState() {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      <Typography>{t('processEmptyStateTitle')}</Typography>
+      <Button>{t('processEmptyStateCreateButton')}</Button>
+    </>
+  );
+}
+```
+
+### What Must Be Translated
+
+| Category              | Examples                                               | Must translate? |
+| --------------------- | ------------------------------------------------------ | --------------- |
+| Visible text          | Headings, labels, descriptions, button text            | **Yes**         |
+| Placeholders          | Input placeholder text                                 | **Yes**         |
+| Image alt text        | `alt` attributes on `<img>` elements                   | **Yes**         |
+| ARIA labels           | `aria-label`, `aria-description`                       | **Yes**         |
+| Error messages        | Validation errors, API error display text              | **Yes**         |
+| Tooltips              | Tooltip content shown to users                         | **Yes**         |
+| CSS class names       | `.container`, `.header`                                | No              |
+| Log messages          | `log.info('Page mounted')`                             | No              |
+| Code comments         | `// TODO: implement feature`                           | No              |
+| Technical identifiers | Route paths, Redux action types, event names           | No              |
+
+### Adding a New Language
+
+1. Create a new directory under `public/locales/` (e.g., `public/locales/fr/`)
+2. Copy `common.json` from `en/` and translate all values
+3. The new language is automatically available — no code changes required
+4. To switch language at runtime: `i18n.changeLanguage('fr')`
+
+### Adding New Translation Keys
+
+When adding any new user-facing text:
+
+1. **Add the key** to `public/locales/en/common.json` (English — source of truth)
+2. **Add the translation** to all other locale files (`ar/common.json`, etc.)
+3. **Use `t('keyName')`** in the component — never use the raw string
+4. **Follow the naming convention** — `<feature><Component><Element>` in camelCase
+
+### Anti-Patterns to Avoid
+
+- **Don't** hardcode user-facing strings in JSX — always use `t()`
+- **Don't** use nested key separators (`process.emptyState.title`) — `keySeparator` is disabled
+- **Don't** use template literals for translated strings — use i18next interpolation: `t('greeting', { name })`
+- **Don't** add keys to `en/common.json` without adding them to all other locale files
+- **Don't** translate log messages, code comments, or technical identifiers
+
+---
+
+## 12. Type System
 
 ### Type Organization Strategy
 
@@ -1312,7 +1485,7 @@ interface ApiError {
 
 ---
 
-## 12. Styling Architecture
+## 13. Styling Architecture
 
 ### Approach: CSS Modules + CSS Custom Properties
 
@@ -1487,7 +1660,7 @@ export function SidebarLayout() {
 
 ---
 
-## 13. Utilities
+## 14. Utilities
 
 ### `src/shared/utils/format.ts`
 
@@ -1537,7 +1710,7 @@ async function withRetry<T>(
 
 ---
 
-## 14. Pages & Features
+## 15. Pages & Features
 
 ### Feature Module Architecture
 
@@ -1635,6 +1808,14 @@ Shared assets: `ChartPanel`, `DateRangeSelector`; `useAnalyticsData` hook.
 | --------------- | --------------------------- | ------------------------------------------------ |
 | `ProfilePage`   | `/profile`                  | Edit own profile, change password, avatar upload |
 
+#### `features/process/`
+
+| Page            | Mounted At     | Key Functionality                                              |
+| --------------- | -------------- | -------------------------------------------------------------- |
+| `ProcessPage`   | `/process`     | Process management entry; renders empty state when no processes exist |
+
+Shared assets: `ProcessEmptyState` (AI prompt input, create process CTA, illustration).
+
 #### `features/help/`
 
 | Page        | Mounted At                | Key Functionality                         |
@@ -1661,6 +1842,7 @@ This matrix shows which features contain pages visible to each role. The `allowe
 | `settings`     | `SystemSettingsPage`       | `['admin']`                 | SidebarLayout  |
 | `settings`     | `PersonalSettingsPage`     | `['supervisor']`            | TopNavLayout   |
 | `profile`      | `ProfilePage`              | `['admin', 'supervisor']`   | SidebarLayout  |
+| `process`      | `ProcessPage`              | — (authenticated)           | AuthenticatedLayout |
 | `help`         | `HelpPage`                 | `['admin', 'supervisor']`   | SidebarLayout  |
 
 ### Sharing Components Within a Feature
@@ -1694,7 +1876,7 @@ Same `UserTable` component, different props — zero code duplication.
 
 ---
 
-## 15. Configuration Management
+## 16. Configuration Management
 
 ### Environment Variables (`src/configs/env.ts`)
 
@@ -1741,7 +1923,7 @@ export const API_TIMEOUT_MS = 30_000;
 
 ---
 
-## 16. API Layer
+## 17. API Layer
 
 ### Client Architecture (`src/services/api/client.ts`)
 
@@ -1805,7 +1987,7 @@ export const endpoints = {
 
 ---
 
-## 17. Error Handling Strategy
+## 18. Error Handling Strategy
 
 ### Error Layers
 
@@ -1839,7 +2021,7 @@ Layer 3: Global Error Capture
 
 ---
 
-## 18. Performance Strategy
+## 19. Performance Strategy
 
 ### React Compiler
 
@@ -1869,7 +2051,7 @@ The React Compiler (`babel-plugin-react-compiler`) is already configured. It pro
 
 ---
 
-## 19. Testing Strategy
+## 20. Testing Strategy
 
 ### Testing Pyramid
 
@@ -1908,7 +2090,7 @@ features/auth/
 
 ---
 
-## 20. Build & Deployment
+## 21. Build & Deployment
 
 ### Scripts
 
@@ -1977,7 +2159,7 @@ Requires corresponding `tsconfig.app.json` paths:
 
 ---
 
-## 21. Dependency Summary
+## 22. Dependency Summary
 
 ### New Runtime Dependencies
 
@@ -1987,6 +2169,9 @@ Requires corresponding `tsconfig.app.json` paths:
 react-redux                           # React-Redux bindings
 react-router-dom                      # Client-side routing
 js-logger                             # Structured logging
+i18next                               # Internationalization core
+react-i18next                         # React bindings for i18next
+i18next-http-backend                  # Lazy-loads locale JSON files at runtime
 ```
 
 ### New Dev Dependencies
@@ -2003,7 +2188,7 @@ vitest                    # Test runner
 
 ```bash
 # Runtime
-npm install @exotel-npm-dev/singal-design-system @reduxjs/toolkit react-redux react-router-dom js-logger
+npm install @exotel-npm-dev/singal-design-system @reduxjs/toolkit react-redux react-router-dom js-logger i18next react-i18next i18next-http-backend
 
 # Dev
 npm install -D vitest @testing-library/react @testing-library/jest-dom @testing-library/user-event @playwright/test

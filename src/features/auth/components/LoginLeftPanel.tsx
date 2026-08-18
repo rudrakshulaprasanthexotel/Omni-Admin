@@ -77,7 +77,7 @@ export function LoginLeftPanel() {
                   height: 8,
                   borderRadius: index === activeSlide ? '4px' : '50%',
                   border: 'none',
-                  backgroundColor: index === activeSlide ? '#333' : '#d9d9d9',
+                  backgroundColor: index === activeSlide ? 'custom.carouselDotActive' : 'custom.carouselDotInactive',
                   cursor: 'pointer',
                   p: 0,
                   transition: 'all 0.3s ease',

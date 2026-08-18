@@ -7,6 +7,10 @@ import { store, persistor } from './store';
 import { router } from './app/router';
 import { theme } from './configs/theme.config';
 import { useSyncAuthHeaders } from '@/features/auth/hooks/useSyncAuthHeaders';
+import { setupApiClientInterceptors } from './services/apiClient';
+
+// Setup interceptors for the API client when the app initializes
+setupApiClientInterceptors(store);
 
 function AppProviders({ children }: { children: ReactNode }) {
   useSyncAuthHeaders();

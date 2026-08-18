@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import {
   Box,
   Button,
   Card,
   Divider,
-  EnhancedTextField,
+  TextField,
   MenuItem,
   Switch,
   Typography,
@@ -66,7 +66,7 @@ const ToggleRow = ({ label, description, checked, onChange }: ToggleRowProps) =>
         {description}
       </Typography>
     </Box>
-    <Switch checked={checked} onChange={(_, value) => onChange(value)} />
+    <Switch checked={checked} onChange={(_: ChangeEvent<HTMLInputElement>, value: boolean) => onChange(value)} />
   </Box>
 );
 
@@ -93,43 +93,43 @@ export function Component() {
       </Box>
 
       <SettingsSection title="General" description="Basic organization and contact details.">
-        <EnhancedTextField
+        <TextField
           label="Organization Name"
           value={settings.organizationName}
-          onChange={(e) => update('organizationName', e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => update('organizationName', e.target.value)}
           fullWidth
         />
-        <EnhancedTextField
+        <TextField
           label="Support Email"
           type="email"
           value={settings.supportEmail}
-          onChange={(e) => update('supportEmail', e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => update('supportEmail', e.target.value)}
           fullWidth
         />
       </SettingsSection>
 
       <SettingsSection title="Appearance" description="Control how the application looks and feels.">
-        <EnhancedTextField
+        <TextField
           label="Theme"
           select
           value={settings.theme}
-          onChange={(e) => update('theme', e.target.value as SettingsState['theme'])}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => update('theme', e.target.value as SettingsState['theme'])}
           fullWidth
         >
           <MenuItem value="system">System Default</MenuItem>
           <MenuItem value="light">Light</MenuItem>
           <MenuItem value="dark">Dark</MenuItem>
-        </EnhancedTextField>
-        <EnhancedTextField
+        </TextField>
+        <TextField
           label="Language"
           select
           value={settings.language}
-          onChange={(e) => update('language', e.target.value as SettingsState['language'])}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => update('language', e.target.value as SettingsState['language'])}
           fullWidth
         >
           <MenuItem value="en">English</MenuItem>
           <MenuItem value="ar">العربية (Arabic)</MenuItem>
-        </EnhancedTextField>
+        </TextField>
       </SettingsSection>
 
       <SettingsSection title="Notifications" description="Choose how you want to be notified.">
@@ -154,11 +154,11 @@ export function Component() {
           checked={settings.twoFactorAuth}
           onChange={(value) => update('twoFactorAuth', value)}
         />
-        <EnhancedTextField
+        <TextField
           label="Session Timeout"
           select
           value={settings.sessionTimeout}
-          onChange={(e) =>
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
             update('sessionTimeout', e.target.value as SettingsState['sessionTimeout'])
           }
           fullWidth
@@ -167,7 +167,7 @@ export function Component() {
           <MenuItem value="30">30 minutes</MenuItem>
           <MenuItem value="60">1 hour</MenuItem>
           <MenuItem value="120">2 hours</MenuItem>
-        </EnhancedTextField>
+        </TextField>
       </SettingsSection>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>

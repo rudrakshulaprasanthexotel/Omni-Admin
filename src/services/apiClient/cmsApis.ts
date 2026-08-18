@@ -13,7 +13,9 @@ import { UserApi } from '@/boilerplate/cmsApis/apis/user-api';
 import { Configuration as CmsConfiguration } from '@/boilerplate/cmsApis/configuration';
 import { apiClient } from '.';
 
-export const cmsConfiguration = new CmsConfiguration({});
+export const cmsConfiguration = new CmsConfiguration({
+  basePath: import.meta.env.VITE_CMS_API_BASE_PATH
+});
 
 export const cmsApis = {
   acronym: new AcronymApi(cmsConfiguration, undefined, apiClient),

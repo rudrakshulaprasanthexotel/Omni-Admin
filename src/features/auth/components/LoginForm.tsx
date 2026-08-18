@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState, type ChangeEvent, type SubmitEvent } from 'react';
 import { Box, FormField, Button, IconButton, Icon, Typography, useToast } from '@exotel-npm-dev/signal-design-system';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { clearLoginResponse, selectLoginError, selectLoginLoading } from '../aut
 import { ALLOWED_ROLES, LOGIN_ERROR_CODE } from '../constants';
 import { ForceLoginDialog } from './ForceLoginDialog';
 import { useTranslation } from 'react-i18next';
+import type { NormalisedAxiosResponse } from '@/shared/utils/normaliseAxiosResponse';
 import type { ILoginApiErrorData } from '../types';
 
 export function LoginForm() {
@@ -32,12 +33,14 @@ export function LoginForm() {
       }),
     ).unwrap();
 
+    const loginData = result.response?.data;
+
     // Only allowed roles can use this interface; surface a notice and drop the
     // session instead of routing unsupported roles into the app.
-    const userType = result.userSessionInfo?.userType;
+    const userType = loginData?.userSessionInfo?.userType;
     if (!userType || !ALLOWED_ROLES.includes(userType)) {
       showWarning(t('roleNotSupported'));
-      const sessionId = result.userSessionInfo?.sessionId;
+      const sessionId = loginData?.userSessionInfo?.sessionId;
       if (sessionId) {
         await dispatch(logout({ sessionId, reason: 'role_not_allowed' }));
       }
@@ -56,8 +59,9 @@ export function LoginForm() {
     try {
       await attemptLogin(false);
     } catch (error: unknown) {
-      const data = error as ILoginApiErrorData;
-      if (data?.errorCode === LOGIN_ERROR_CODE.FORCE_LOGIN_ERROR_CODE) {
+      const normalisedError = error as NormalisedAxiosResponse;
+      const errorData = normalisedError?.response?.data as ILoginApiErrorData | undefined;
+      if (errorData?.errorCode === LOGIN_ERROR_CODE.FORCE_LOGIN_ERROR_CODE) {
         setShowForceLogin(true);
       }
     }
@@ -86,7 +90,7 @@ export function LoginForm() {
             required
             fullWidth
             value={userId}
-            onChange={(e) => setUserId(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setUserId(e.target.value)}
             disabled={loginLoading}
           />
 
@@ -97,7 +101,7 @@ export function LoginForm() {
             fullWidth
             type={showPassword ? 'text' : 'password'}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
             disabled={loginLoading}
             endAdornment={
               <IconButton
