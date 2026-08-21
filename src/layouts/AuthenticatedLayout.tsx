@@ -19,7 +19,7 @@ const AuthenticatedLayout = () => {
             <LeftSidebar />
           </Box>
           <Box flex={1} bgcolor='surface.elevation0' p={1} overflow='hidden'>
-            <Box borderRadius={1} height='100%' bgcolor='surface.elevation1' overflow='auto' p={1}>
+            <Box borderRadius={1} height='100%' bgcolor='surface.elevation1' overflow='auto'>
               <Outlet />
             </Box>
           </Box>
