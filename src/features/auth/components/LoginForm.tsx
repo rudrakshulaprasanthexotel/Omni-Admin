@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { login, logout } from '../asyncActions';
 import { clearLoginResponse, selectLoginError, selectLoginLoading } from '../authSlice';
 import { ALLOWED_ROLES, LOGIN_ERROR_CODE } from '../constants';
+import { getHomeRouteForUser } from '../utils';
 import { ForceLoginDialog } from './ForceLoginDialog';
 import { useTranslation } from 'react-i18next';
 import type { NormalisedAxiosResponse } from '@/shared/utils/normaliseAxiosResponse';
@@ -48,7 +49,7 @@ export function LoginForm() {
       return result;
     }
 
-    navigate('/dashboard', { replace: true });
+    navigate(getHomeRouteForUser(userType), { replace: true });
     return result;
   };
 

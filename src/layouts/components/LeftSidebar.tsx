@@ -2,6 +2,7 @@ import { Navigation, type NavItemPayload, type NavSectionProps } from "@exotel-n
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "@/store/hooks";
 import { selectLoginResponse } from "@/features/auth/authSlice";
+import { UserType } from "@/features/auth/types";
 
 const adminNavigationSections: NavSectionProps[] = [
   {
@@ -38,17 +39,8 @@ export const dummyAdminNavigationSections: NavSectionProps[] = [
 
 const supervisorNavigationSections: NavSectionProps[] = [
   {
-    label: 'Main',
     items: [
-      { id: 'dashboard', label: 'Dashboard', iconName: 'house', path: '/dashboard', openNewPage: false },
-      { id: 'monitoring', label: 'Live Monitoring', iconName: 'chart-bar', path: '/monitoring', openNewPage: false },
-      { id: 'team', label: 'Team Performance', iconName: 'users', path: '/team', openNewPage: false },
-    ],
-  },
-  {
-    label: 'Preferences',
-    items: [
-      { id: 'help', label: 'Help', iconName: 'question', path: '/help', openNewPage: false },
+      { id: 'interactions', label: 'Interaction Details', iconName: 'chart-bar', path: '/interactions' },
     ],
   },
 ];
@@ -56,9 +48,9 @@ const supervisorNavigationSections: NavSectionProps[] = [
 const LeftSidebar = () => {
   const navigate = useNavigate();
   const loginResponse = useAppSelector(selectLoginResponse);
-  const userType = loginResponse?.userSessionInfo?.userType?.toLowerCase() ?? '';
+  const userType = loginResponse?.userSessionInfo?.userType ?? '';
 
-  const navigationSections = userType === 'supervisor'
+  const navigationSections = userType === UserType.SUPERVISOR
     ? supervisorNavigationSections
     : dummyAdminNavigationSections;
 

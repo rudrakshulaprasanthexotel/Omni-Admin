@@ -18,18 +18,22 @@ export const routes: RouteObject[] = [
     element: <AuthenticatedLayout />,
     errorElement: <HydrateFallback />,
     children: [
-      { path: '/dashboard', lazy: () => import('../features/dashboard/pages/DashboardPage') },
-      { path: '/analytics', lazy: () => import('../features/analytics/pages/AnalyticsPage') },
-      { path: '/users', lazy: () => import('../features/users/pages/UsersPage') },
-      { path: '/queues', lazy: () => import('../features/queues/pages/QueuesPage') },
-      { path: '/audit', lazy: () => import('../features/audit/pages/AuditLogsPage') },
-      { path: '/process', lazy: () => import('../features/process/pages/ProcessPage') },
-      { path: '/help', lazy: () => import('../features/help/pages/HelpPage') },
+      {
+        element: <RoleGuard allowedRoles={[UserType.ADMIN]} />,
+        children: [
+          { path: '/dashboard', lazy: () => import('../features/dashboard/pages/DashboardPage') },
+          { path: '/analytics', lazy: () => import('../features/analytics/pages/AnalyticsPage') },
+          { path: '/users', lazy: () => import('../features/users/pages/UsersPage') },
+          { path: '/queues', lazy: () => import('../features/queues/pages/QueuesPage') },
+          { path: '/audit', lazy: () => import('../features/audit/pages/AuditLogsPage') },
+          { path: '/process', lazy: () => import('../features/process/pages/ProcessPage') },
+          { path: '/help', lazy: () => import('../features/help/pages/HelpPage') },
+        ],
+      },
       {
         element: <RoleGuard allowedRoles={[UserType.SUPERVISOR]} />,
         children: [
-          { path: '/monitoring', lazy: () => import('../features/queues/pages/QueueMonitorPage') },
-          { path: '/team', lazy: () => import('../features/analytics/pages/AgentPerformancePage') },
+          { path: '/interactions', lazy: () => import('../features/interactions/pages/InteractionDetailsPage') },
         ],
       },
     ],
