@@ -346,7 +346,7 @@ export function Component() {
     <Box sx={{ flex: 1, height: '100%' }}>
       <DataGrid
         rows={rows}
-        columns={columns as GridColDef[]}
+        columns={columns}
         tableHeader={tableHeader}
         customToolbarFilters={customToolbarFilters}
         showAppliedFilters
