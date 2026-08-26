@@ -4,14 +4,6 @@ import { useAppSelector } from "@/store/hooks";
 import { selectLoginResponse } from "@/features/auth/authSlice";
 import { UserType } from "@/features/auth/types";
 
-const adminNavigationSections: NavSectionProps[] = [
-  {
-    items: [
-      { id: 'process', label: 'Process', iconName: 'gear-fine', path: '/process' },
-    ]
-  }
-]
-
 /** Full admin nav — restore when those routes ship */
 export const dummyAdminNavigationSections: NavSectionProps[] = [
   {

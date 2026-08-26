@@ -1,20 +1,34 @@
-import { useMemo, useState } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import {
   Box,
   Chip,
   DataGrid,
   Icon,
   Typography,
+  useTheme,
+  type DataGridProps,
   type DataGridTableHeaderProps,
   type GridColDef,
   type GridRenderCellParams,
-  type GridRowParams,
   type IconName,
   type MultiSelectOption,
   type ToolbarFilterConfig,
 } from '@exotel-npm-dev/signal-design-system';
-import { mockInteractions } from '../data/mockInteractions';
+
+type ToolbarFilterRecords = Parameters<NonNullable<DataGridProps['onToolbarFiltersChange']>>[0];
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import {
+  fetchAssignedCampaigns,
+  fetchInteractions,
+} from '../asyncActions';
+import {
+  selectInteractions,
+  selectInteractionsCampaigns,
+  selectInteractionsError,
+  selectInteractionsLoading,
+} from '../interactionsSlice';
 import {
   InteractionChannel,
   InteractionChannelType,
@@ -28,14 +42,6 @@ const CHANNEL_ICON: Record<InteractionChannel, IconName> = {
   [InteractionChannel.SMS]: 'chat-text',
   [InteractionChannel.MAIL]: 'envelope-simple',
   [InteractionChannel.CHAT]: 'chats-circle',
-};
-
-const CHANNEL_ICON_COLOR: Record<InteractionChannel, string> = {
-  [InteractionChannel.CALL]: '#2E7D32',
-  [InteractionChannel.WHATSAPP]: '#25D366',
-  [InteractionChannel.SMS]: '#0288D1',
-  [InteractionChannel.MAIL]: '#1976D2',
-  [InteractionChannel.CHAT]: '#7B1FA2',
 };
 
 const CHANNEL_TYPE_ICON: Record<InteractionChannelType, IconName> = {
@@ -59,6 +65,7 @@ const formatDuration = (totalSeconds: number) => {
 
 const formatShortDate = (iso: string) => {
   const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
   const day = date.toLocaleString(undefined, { month: 'short', day: '2-digit' });
   const time = date.toLocaleString(undefined, {
     hour: '2-digit',
@@ -75,7 +82,15 @@ const scoreColor = (score: number, total: number): 'success' | 'warning' | 'erro
   return 'error';
 };
 
-const iconTextCell = (iconName: IconName, text: string, iconColor?: string) => (
+const IconTextCell = ({
+  iconName,
+  text,
+  iconColor,
+}: {
+  iconName: IconName;
+  text: string;
+  iconColor?: string;
+}) => (
   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: '100%' }}>
     <Icon name={iconName} size="sm" color={iconColor} />
     <Typography variant="body2" noWrap>
@@ -89,277 +104,358 @@ const toMultiSelectOptions = (values: string[]): MultiSelectOption[] =>
 
 export function Component() {
   const { t } = useTranslation();
-  const [rows] = useState<Interaction[]>(mockInteractions);
+  const dispatch = useAppDispatch();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const theme = useTheme();
 
-  const customerOptions = useMemo(
-    () =>
-      toMultiSelectOptions(
-        Array.from(new Set(rows.map((r) => r.customer.name))).sort(),
-      ),
-    [rows],
-  );
-
-  const channelOptions = useMemo(
-    () => toMultiSelectOptions(Object.values(InteractionChannel)),
-    [],
-  );
-
-  const userOptions = useMemo(
-    () =>
-      toMultiSelectOptions(
-        Array.from(new Set(rows.map((r) => r.user.name))).sort(),
-      ),
-    [rows],
-  );
-
-  const campaignOptions = useMemo(
-    () =>
-      toMultiSelectOptions(
-        Array.from(new Set(rows.map((r) => r.campaign))).sort(),
-      ),
-    [rows],
-  );
-
-  const customToolbarFilters: ToolbarFilterConfig[] = useMemo(
-    () => [
-      {
-        id: 'customer',
-        type: 'multi-select',
-        label: t('interactionsFilterCustomer'),
-        multiSelectOptions: customerOptions,
-      },
-      {
-        id: 'channel',
-        type: 'multi-select',
-        label: t('interactionsFilterChannel'),
-        multiSelectOptions: channelOptions,
-      },
-      {
-        id: 'user',
-        type: 'multi-select',
-        label: t('interactionsFilterUser'),
-        multiSelectOptions: userOptions,
-      },
-      {
-        id: 'dateAdded',
-        type: 'date-range',
-        label: t('interactionsFilterDateRange'),
-        iconName: 'calendar-blank',
-        allowPastDates: true,
-        allowFutureDates: true,
-      },
-      {
-        id: 'campaign',
-        type: 'multi-select',
-        label: t('interactionsFilterCampaign'),
-        multiSelectOptions: campaignOptions,
-      },
-    ],
-    [t, customerOptions, channelOptions, userOptions, campaignOptions],
-  );
-
-  const tableHeader: DataGridTableHeaderProps = useMemo(
-    () => ({
-      title: `${t('interactionsPageTitle')} (${rows.length})`,
-      showSearch: true,
-      searchType: 'basic',
-      actions: [
-        {
-          id: 'ask-copilot',
-          variant: 'outlined',
-          color: 'inherit',
-          size: 'medium',
-          startIconProps: { name: 'sparkle' },
-          children: t('interactionsAskCopilot'),
-        },
-      ],
-    }),
-    [t, rows.length],
-  );
-
-  const columns = useMemo<GridColDef<Interaction>[]>(
-    () => [
-      {
-        field: 'customer',
-        headerName: t('interactionsColumnCustomerName'),
-        width: 208,
-        sortComparator: (a: Interaction['customer'], b: Interaction['customer']) =>
-          a.name.localeCompare(b.name),
-        renderCell: (params: GridRenderCellParams<Interaction>) => (
-          <IdentityCell kind="customer" name={params.row.customer.name} />
-        ),
-      },
-      {
-        field: 'channelDetail',
-        headerName: t('interactionsColumnChannelDetail'),
-        width: 174,
-      },
-      {
-        field: 'channel',
-        headerName: t('interactionsColumnChannel'),
-        width: 152,
-        renderCell: (params: GridRenderCellParams<Interaction, InteractionChannel>) => {
-          const channel = params.value;
-          if (!channel) return null;
-          return iconTextCell(CHANNEL_ICON[channel], channel, CHANNEL_ICON_COLOR[channel]);
-        },
-      },
-      {
-        field: 'channelType',
-        headerName: t('interactionsColumnChannelType'),
-        width: 214,
-        renderCell: (
-          params: GridRenderCellParams<Interaction, InteractionChannelType>,
-        ) => {
-          const type = params.value;
-          if (!type) return null;
-          return iconTextCell(CHANNEL_TYPE_ICON[type], type);
-        },
-      },
-      {
-        field: 'user',
-        headerName: t('interactionsColumnUser'),
-        width: 208,
-        sortComparator: (a: Interaction['user'], b: Interaction['user']) =>
-          a.name.localeCompare(b.name),
-        renderCell: (params: GridRenderCellParams<Interaction>) => (
-          <IdentityCell kind="user" name={params.row.user.name} />
-        ),
-      },
-      {
-        field: 'scoring',
-        headerName: t('interactionsColumnScoring'),
-        width: 144,
-        sortComparator: (a: Interaction['scoring'], b: Interaction['scoring']) => {
-          const av = a ? a.score / a.total : -1;
-          const bv = b ? b.score / b.total : -1;
-          return av - bv;
-        },
-        renderCell: (
-          params: GridRenderCellParams<Interaction, Interaction['scoring']>,
-        ) => {
-          const scoring = params.value;
-          return (
-            <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-              {scoring ? (
-                <Chip
-                  label={`${scoring.score}/${scoring.total}`}
-                  size="small"
-                  variant="tonal"
-                  color={scoreColor(scoring.score, scoring.total)}
-                />
-              ) : (
-                <Typography variant="body2" color="text.disabled">
-                  —
-                </Typography>
-              )}
-            </Box>
-          );
-        },
-      },
-      {
-        field: 'campaign',
-        headerName: t('interactionsColumnCampaign'),
-        width: 158,
-      },
-      {
-        field: 'queue',
-        headerName: t('interactionsColumnQueue'),
-        width: 158,
-      },
-      {
-        field: 'dateAdded',
-        headerName: t('interactionsColumnDateAdded'),
-        width: 211,
-        renderCell: (params: GridRenderCellParams<Interaction, string>) =>
-          params.value ? iconTextCell('calendar-blank', formatShortDate(params.value)) : null,
-      },
-      {
-        field: 'interactionTimeSeconds',
-        headerName: t('interactionsColumnInteractionTime'),
-        width: 211,
-        renderCell: (params: GridRenderCellParams<Interaction, number>) =>
-          iconTextCell('timer', formatDuration(params.value ?? 0)),
-      },
-      {
-        field: 'holdTimeSeconds',
-        headerName: t('interactionsColumnHoldTime'),
-        width: 211,
-        renderCell: (params: GridRenderCellParams<Interaction, number>) =>
-          iconTextCell('timer', formatDuration(params.value ?? 0)),
-      },
-      {
-        field: 'ivrTimeSeconds',
-        headerName: t('interactionsColumnIvrTime'),
-        width: 211,
-        renderCell: (params: GridRenderCellParams<Interaction, number>) =>
-          iconTextCell('timer', formatDuration(params.value ?? 0)),
-      },
-      {
-        field: 'setupTimeSeconds',
-        headerName: t('interactionsColumnSetupTime'),
-        width: 211,
-        renderCell: (params: GridRenderCellParams<Interaction, number>) =>
-          iconTextCell('timer', formatDuration(params.value ?? 0)),
-      },
-      {
-        field: 'ringingTimeSeconds',
-        headerName: t('interactionsColumnRingingTime'),
-        width: 211,
-        renderCell: (params: GridRenderCellParams<Interaction, number>) =>
-          iconTextCell('timer', formatDuration(params.value ?? 0)),
-      },
-      {
-        field: 'systemDisposition',
-        headerName: t('interactionsColumnSystemDisposition'),
-        width: 230,
-      },
-      {
-        field: 'dispositionClass',
-        headerName: t('interactionsColumnDispositionClass'),
-        width: 230,
-      },
-      {
-        field: 'dispositionCode',
-        headerName: t('interactionsColumnDispositionCode'),
-        width: 230,
-      },
-      {
-        field: 'uniqueId',
-        headerName: t('interactionsColumnUniqueId'),
-        width: 237,
-        valueGetter: (_value, row: Interaction) => row.uniqueId ?? row.id,
-      },
-    ],
-    [t],
-  );
-
-  const handleRowClick = (_params: GridRowParams<Interaction>) => {
-    // Row click routes to the CQA scoring screen (out of scope for this dummy page).
+  const channelColor: Record<InteractionChannel, string> = {
+    [InteractionChannel.CALL]: theme.palette.custom.channelCall,
+    [InteractionChannel.WHATSAPP]: theme.palette.custom.channelWhatsApp,
+    [InteractionChannel.SMS]: theme.palette.custom.channelSms,
+    [InteractionChannel.MAIL]: theme.palette.custom.channelMail,
+    [InteractionChannel.CHAT]: theme.palette.custom.channelChat,
   };
+
+  const campaignIdParam = searchParams.get('campaignId');
+  const parsedCampaignId = campaignIdParam ? Number(campaignIdParam) : Number.NaN;
+  const hasValidCampaignId = Number.isFinite(parsedCampaignId);
+  const campaignId = hasValidCampaignId ? parsedCampaignId : null;
+
+  const rows = useAppSelector(selectInteractions);
+  const loading = useAppSelector(selectInteractionsLoading);
+  const fetchError = useAppSelector(selectInteractionsError);
+  const campaigns = useAppSelector(selectInteractionsCampaigns);
+
+  useEffect(() => {
+    if (campaigns.length === 0) {
+      dispatch(fetchAssignedCampaigns());
+    }
+  }, [dispatch, campaigns.length]);
+
+  // Default to the first assigned campaign as soon as the campaigns list is
+  // resolved. We write the pick back to the URL (`replace: true`) so
+  // refresh / deep-link continues to work off `?campaignId=`.
+  useEffect(() => {
+    if (campaigns.length === 0) return;
+    if (campaignId !== null) return;
+    const firstCampaignId = campaigns[0]?.campaignId;
+    if (firstCampaignId === undefined || firstCampaignId === null) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('campaignId', String(firstCampaignId));
+        return next;
+      },
+      { replace: true },
+    );
+  }, [campaigns, campaignId, setSearchParams]);
+
+  useEffect(() => {
+    if (campaignId === null) return;
+    dispatch(fetchInteractions({ campaignId }));
+  }, [dispatch, campaignId]);
+
+  const uniqueSorted = (values: string[]): string[] =>
+    Array.from(new Set(values.filter(Boolean))).sort();
+
+  const customerOptions = toMultiSelectOptions(
+    uniqueSorted(rows.map((r) => r.customer.name)),
+  );
+
+  const channelOptions = toMultiSelectOptions(Object.values(InteractionChannel));
+
+  const userOptions = toMultiSelectOptions(uniqueSorted(rows.map((r) => r.user.name)));
+
+  // Campaign options use `campaignId` as the value so `onToolbarFiltersChange`
+  // can sync the selection back to the URL search param without a name-→-id
+  // lookup, and the filter chip stays wired to the same identifier the
+  // fetch thunk consumes.
+  const campaignOptions: MultiSelectOption[] =
+    campaigns.length > 0
+      ? [...campaigns]
+        .sort((a, b) => a.campaignName.localeCompare(b.campaignName))
+        .map((c) => ({
+          id: String(c.campaignId),
+          label: c.campaignName,
+          value: String(c.campaignId),
+        }))
+      : toMultiSelectOptions(uniqueSorted(rows.map((r) => r.campaign)));
+
+  const campaignInitialValue = campaignId !== null ? [String(campaignId)] : undefined;
+
+  const customToolbarFilters: ToolbarFilterConfig[] = [
+    {
+      id: 'customer',
+      type: 'multi-select',
+      label: t('interactionsFilterCustomer'),
+      multiSelectOptions: customerOptions,
+    },
+    {
+      id: 'channel',
+      type: 'multi-select',
+      label: t('interactionsFilterChannel'),
+      multiSelectOptions: channelOptions,
+    },
+    {
+      id: 'user',
+      type: 'multi-select',
+      label: t('interactionsFilterUser'),
+      multiSelectOptions: userOptions,
+    },
+    {
+      id: 'dateAdded',
+      type: 'date-range',
+      label: t('interactionsFilterDateRange'),
+      iconName: 'calendar-blank',
+      allowPastDates: true,
+      allowFutureDates: true,
+    },
+    {
+      id: 'campaign',
+      type: 'multi-select',
+      label: t('interactionsFilterCampaign'),
+      multiSelectOptions: campaignOptions,
+      initialValue: campaignInitialValue,
+    },
+  ];
+
+  const handleToolbarFiltersChange = (appliedFilters: ToolbarFilterRecords): void => {
+    const raw = appliedFilters.campaign;
+    const picked = Array.isArray(raw) ? raw[0] : undefined;
+    const nextCampaignId = picked && picked.length > 0 ? picked : null;
+    const currentCampaignId = searchParams.get('campaignId');
+    if (nextCampaignId === currentCampaignId) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (nextCampaignId === null) {
+          next.delete('campaignId');
+        } else {
+          next.set('campaignId', nextCampaignId);
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  const tableHeader: DataGridTableHeaderProps = {
+    title: `${t('interactionsPageTitle')} (${rows.length})`,
+    showSearch: true,
+    searchType: 'basic',
+    actions: [
+      {
+        id: 'ask-copilot',
+        variant: 'outlined',
+        color: 'inherit',
+        size: 'medium',
+        startIconProps: { name: 'sparkle' },
+        children: t('interactionsAskCopilot'),
+      },
+    ],
+  };
+
+  const columns: GridColDef<Interaction>[] = [
+    {
+      field: 'customer',
+      headerName: t('interactionsColumnCustomerName'),
+      width: 208,
+      sortComparator: (a: Interaction['customer'], b: Interaction['customer']) =>
+        a.name.localeCompare(b.name),
+      renderCell: (params: GridRenderCellParams<Interaction>) => (
+        <IdentityCell kind="customer" name={params.row.customer.name} />
+      ),
+    },
+    {
+      field: 'channelDetail',
+      headerName: t('interactionsColumnChannelDetail'),
+      width: 174,
+    },
+    {
+      field: 'channel',
+      headerName: t('interactionsColumnChannel'),
+      width: 152,
+      renderCell: (params: GridRenderCellParams<Interaction, InteractionChannel>) => {
+        const channel = params.value;
+        if (!channel) return null;
+        return (
+          <IconTextCell
+            iconName={CHANNEL_ICON[channel]}
+            text={channel}
+            iconColor={channelColor[channel]}
+          />
+        );
+      },
+    },
+    {
+      field: 'channelType',
+      headerName: t('interactionsColumnChannelType'),
+      width: 214,
+      renderCell: (
+        params: GridRenderCellParams<Interaction, InteractionChannelType>,
+      ) => {
+        const type = params.value;
+        if (!type) return null;
+        return <IconTextCell iconName={CHANNEL_TYPE_ICON[type]} text={type} />;
+      },
+    },
+    {
+      field: 'user',
+      headerName: t('interactionsColumnUser'),
+      width: 208,
+      sortComparator: (a: Interaction['user'], b: Interaction['user']) =>
+        a.name.localeCompare(b.name),
+      renderCell: (params: GridRenderCellParams<Interaction>) => (
+        <IdentityCell kind="user" name={params.row.user.name} />
+      ),
+    },
+    {
+      field: 'scoring',
+      headerName: t('interactionsColumnScoring'),
+      width: 144,
+      sortComparator: (a: Interaction['scoring'], b: Interaction['scoring']) => {
+        const av = a ? a.score / a.total : -1;
+        const bv = b ? b.score / b.total : -1;
+        return av - bv;
+      },
+      renderCell: (
+        params: GridRenderCellParams<Interaction, Interaction['scoring']>,
+      ) => {
+        const scoring = params.value;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+            {scoring ? (
+              <Chip
+                label={`${scoring.score}/${scoring.total}`}
+                size="small"
+                variant="tonal"
+                color={scoreColor(scoring.score, scoring.total)}
+              />
+            ) : (
+              <Typography variant="body2" color="text.disabled">
+                —
+              </Typography>
+            )}
+          </Box>
+        );
+      },
+    },
+    {
+      field: 'campaign',
+      headerName: t('interactionsColumnCampaign'),
+      width: 158,
+    },
+    {
+      field: 'queue',
+      headerName: t('interactionsColumnQueue'),
+      width: 158,
+    },
+    {
+      field: 'dateAdded',
+      headerName: t('interactionsColumnDateAdded'),
+      width: 211,
+      renderCell: (params: GridRenderCellParams<Interaction, string>) =>
+        params.value ? (
+          <IconTextCell iconName="calendar-blank" text={formatShortDate(params.value)} />
+        ) : null,
+    },
+    {
+      field: 'interactionTimeSeconds',
+      headerName: t('interactionsColumnInteractionTime'),
+      width: 211,
+      renderCell: (params: GridRenderCellParams<Interaction, number>) => (
+        <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
+      ),
+    },
+    {
+      field: 'holdTimeSeconds',
+      headerName: t('interactionsColumnHoldTime'),
+      width: 211,
+      renderCell: (params: GridRenderCellParams<Interaction, number>) => (
+        <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
+      ),
+    },
+    {
+      field: 'ivrTimeSeconds',
+      headerName: t('interactionsColumnIvrTime'),
+      width: 211,
+      renderCell: (params: GridRenderCellParams<Interaction, number>) => (
+        <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
+      ),
+    },
+    {
+      field: 'setupTimeSeconds',
+      headerName: t('interactionsColumnSetupTime'),
+      width: 211,
+      renderCell: (params: GridRenderCellParams<Interaction, number>) => (
+        <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
+      ),
+    },
+    {
+      field: 'ringingTimeSeconds',
+      headerName: t('interactionsColumnRingingTime'),
+      width: 211,
+      renderCell: (params: GridRenderCellParams<Interaction, number>) => (
+        <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
+      ),
+    },
+    {
+      field: 'systemDisposition',
+      headerName: t('interactionsColumnSystemDisposition'),
+      width: 230,
+    },
+    {
+      field: 'dispositionClass',
+      headerName: t('interactionsColumnDispositionClass'),
+      width: 230,
+    },
+    {
+      field: 'dispositionCode',
+      headerName: t('interactionsColumnDispositionCode'),
+      width: 230,
+    },
+    {
+      field: 'uniqueId',
+      headerName: t('interactionsColumnUniqueId'),
+      width: 237,
+      valueGetter: (_value, row: Interaction) => row.uniqueId ?? row.id,
+    },
+  ];
 
   const handleRefresh = () => {
-    // Placeholder — will trigger data refetch when wired up to the API.
+    if (campaignId === null) return;
+    dispatch(fetchInteractions({ campaignId }));
   };
+
+  const emptyStateMessage = campaignId === null
+    ? t('interactionsSelectCampaign')
+    : fetchError
+      ? t('interactionsLoadError')
+      : t('interactionsEmptyState');
 
   return (
     <Box sx={{ flex: 1, height: '100%' }}>
       <DataGrid
+        // Re-mount the grid when the resolved campaign changes so the
+        // Campaign filter chip re-reads `initialValue` from the URL param
+        // (the underlying toolbar keeps its own uncontrolled state).
+        key={campaignId ?? 'no-campaign'}
         rows={rows}
         columns={columns}
+        loading={loading}
         tableHeader={tableHeader}
         customToolbarFilters={customToolbarFilters}
         showAppliedFilters
         onRefresh={handleRefresh}
+        onToolbarFiltersChange={handleToolbarFiltersChange}
         checkboxSelection
         disableRowSelectionOnClick
-        onRowClick={handleRowClick}
         initialState={{
           pagination: { paginationModel: { pageSize: DEFAULT_PAGE_SIZE } },
         }}
         pageSizeOptions={PAGE_SIZE_OPTIONS}
         pagination
-        emptyStateMessage={t('interactionsEmptyState')}
+        emptyStateMessage={emptyStateMessage}
       />
     </Box>
   );

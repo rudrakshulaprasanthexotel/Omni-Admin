@@ -106,5 +106,7 @@
     "interactionsColumnDispositionClass": "Disposition Class",
     "interactionsColumnDispositionCode": "Disposition Code",
     "interactionsColumnUniqueId": "Unique ID",
-    "interactionsEmptyState": "No interactions match your filters yet."
+    "interactionsEmptyState": "No interactions match your filters yet.",
+    "interactionsSelectCampaign": "Select a campaign to view its interactions.",
+    "interactionsLoadError": "Something went wrong while loading interactions. Try again."
 }

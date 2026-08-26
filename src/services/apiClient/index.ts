@@ -101,4 +101,15 @@ export function setAuthorizationHeader(bearerToken: string): void {
   apiClient.defaults.headers.common['Authorization'] = bearerToken;
 }
 
+/**
+ * Tenant/account scope header. The data-engine service (and other multi-tenant
+ * backends behind the gateway) require this header to resolve the caller's
+ * tenant — without it, `POST /data-engine/voice/callHistoryWithScoring/search`
+ * returns `404 {errorCode:"1001", errorMessage:"Data not found"}` for every
+ * campaign because the query lands in an unscoped context.
+ */
+export function setAccountIdHeader(accountId: string): void {
+  apiClient.defaults.headers.common['accountid'] = accountId;
+}
+
 export { apiClient };
