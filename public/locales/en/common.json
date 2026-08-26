@@ -82,7 +82,6 @@
     "processTab_crm_placeholder": "No CRM integrations configured.",
     "processTab_settings_placeholder": "No settings available.",
     "interactionsPageTitle": "Interaction Details",
-    "interactionsAskCopilot": "Ask Copilot",
     "interactionsFilterCustomer": "Customer",
     "interactionsFilterChannel": "Channel",
     "interactionsFilterUser": "User",

@@ -3,7 +3,6 @@ import { Outlet } from "react-router-dom";
 import TopNavBar from "./components/TopNavBar";
 import { AuthGuard } from "@/shared/components/guards/AuthGuard";
 import LeftSidebar from "./components/LeftSidebar";
-import CopilotWidget from "@/features/copilot/components/CopilotWidget";
 import usePingPush from "@/features/auth/hooks/usePingPush";
 
 
@@ -24,7 +23,6 @@ const AuthenticatedLayout = () => {
             </Box>
           </Box>
         </Box>
-        <CopilotWidget />
       </Box>
     </AuthGuard>
   )

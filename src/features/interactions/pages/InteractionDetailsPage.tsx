@@ -243,16 +243,6 @@ export function Component() {
     title: `${t('interactionsPageTitle')} (${rows.length})`,
     showSearch: true,
     searchType: 'basic',
-    actions: [
-      {
-        id: 'ask-copilot',
-        variant: 'outlined',
-        color: 'inherit',
-        size: 'medium',
-        startIconProps: { name: 'sparkle' },
-        children: t('interactionsAskCopilot'),
-      },
-    ],
   };
 
   const columns: GridColDef<Interaction>[] = [
