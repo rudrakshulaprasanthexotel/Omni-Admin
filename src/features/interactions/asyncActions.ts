@@ -15,7 +15,6 @@ import type { RootState } from '@/store';
 
 export interface FetchInteractionsArgs {
   campaignId: number;
-  /** Epoch ms. Defaults to "last 30 days" when omitted. */
   fromEpochMs?: number;
   toEpochMs?: number;
   pageNumber?: number;
@@ -79,18 +78,6 @@ function buildSearchRequest(args: FetchInteractionsArgs): CallDetailsRequestBean
   };
 }
 
-/**
- * Loads the Interaction Details rows for the given campaign. This is the
- * primary REST call for the page — replaces the RPC path documented in the
- * `InteractionDetails_Figma_vs_GWT_Validation.md` §5 table.
- */
-/**
- * The data-engine search endpoint returns HTTP 404 with
- * `{"errorCode":"1001","errorMessage":"Data not found"}` when the query
- * matches zero rows — the same signal a "200 []" would carry. Treat that
- * shape as an empty result set, not as a load failure, so the empty state
- * (not the error state) renders.
- */
 function isEmptyResultError(error: AxiosError<{ errorCode?: string }>): boolean {
   return error.response?.status === 404 && error.response?.data?.errorCode === '1001';
 }
@@ -127,10 +114,6 @@ export const fetchInteractions = createAsyncThunk<
   }
 });
 
-/**
- * Loads the QA-parameter denominator (`/45`) for the campaign. Cached per
- * campaign in the slice.
- */
 export const fetchCampaignQaDenominator = createAsyncThunk<
   { campaignId: number; total: number },
   { campaignId: number; contactCenterId: number; processId: number },
@@ -158,11 +141,6 @@ export const fetchCampaignQaDenominator = createAsyncThunk<
   },
 );
 
-/**
- * Loads the tenant's campaigns so we can resolve `campaignId → campaignName`
- * client-side and populate the Campaign filter chip. Uses REST, not the
- * legacy RPC (`SupervisorGwtRpcService.getAllCampaigns`).
- */
 export const fetchAssignedCampaigns = createAsyncThunk<
   NormalisedAxiosResponse<Awaited<ReturnType<typeof supervisorApis.getAssignedCampaigns>>['data']>,
   void,

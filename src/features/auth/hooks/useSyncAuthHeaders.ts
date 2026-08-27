@@ -7,12 +7,6 @@ import {
   setSessionId,
 } from "@/services/apiClient";
 
-/**
- * Binds the sessionId, Authorization, and accountid headers to the axios
- * instance whenever the logged-in user changes. These headers live in memory,
- * so this also restores them after a page refresh (once redux-persist has
- * rehydrated the auth slice from storage).
- */
 export function useSyncAuthHeaders(): void {
   const loginResponse = useAppSelector(selectLoginResponse);
 

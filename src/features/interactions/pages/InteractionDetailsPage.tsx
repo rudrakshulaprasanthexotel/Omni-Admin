@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -24,10 +24,12 @@ import {
   fetchInteractions,
 } from '../asyncActions';
 import {
+  resetInteractionsPagination,
   selectInteractions,
   selectInteractionsCampaigns,
   selectInteractionsError,
   selectInteractionsLoading,
+  selectInteractionsTotalRows,
 } from '../interactionsSlice';
 import {
   InteractionChannel,
@@ -53,6 +55,10 @@ const CHANNEL_TYPE_ICON: Record<InteractionChannelType, IconName> = {
 
 const PAGE_SIZE_OPTIONS: number[] = [10, 50, 100, 200];
 const DEFAULT_PAGE_SIZE = 50;
+
+type PaginationModel = { page: number; pageSize: number };
+
+const initialPaginationModel: PaginationModel = { page: 0, pageSize: DEFAULT_PAGE_SIZE };
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -124,7 +130,31 @@ export function Component() {
   const rows = useAppSelector(selectInteractions);
   const loading = useAppSelector(selectInteractionsLoading);
   const fetchError = useAppSelector(selectInteractionsError);
+  const totalRows = useAppSelector(selectInteractionsTotalRows);
   const campaigns = useAppSelector(selectInteractionsCampaigns);
+
+  const [paginationModel, setPaginationModel] =
+    useState<PaginationModel>(initialPaginationModel);
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearchText, setDebouncedSearchText] = useState('');
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearchText(searchText.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [searchText]);
+  const [prevCampaignId, setPrevCampaignId] = useState<number | null>(campaignId);
+  if (prevCampaignId !== campaignId) {
+    setPrevCampaignId(campaignId);
+    setPaginationModel(initialPaginationModel);
+    setSearchText('');
+    setDebouncedSearchText('');
+    dispatch(resetInteractionsPagination());
+  }
+  const [prevSearchText, setPrevSearchText] = useState(debouncedSearchText);
+  if (prevSearchText !== debouncedSearchText) {
+    setPrevSearchText(debouncedSearchText);
+    setPaginationModel(initialPaginationModel);
+    dispatch(resetInteractionsPagination());
+  }
 
   useEffect(() => {
     if (campaigns.length === 0) {
@@ -132,9 +162,6 @@ export function Component() {
     }
   }, [dispatch, campaigns.length]);
 
-  // Default to the first assigned campaign as soon as the campaigns list is
-  // resolved. We write the pick back to the URL (`replace: true`) so
-  // refresh / deep-link continues to work off `?campaignId=`.
   useEffect(() => {
     if (campaigns.length === 0) return;
     if (campaignId !== null) return;
@@ -152,8 +179,15 @@ export function Component() {
 
   useEffect(() => {
     if (campaignId === null) return;
-    dispatch(fetchInteractions({ campaignId }));
-  }, [dispatch, campaignId]);
+    dispatch(
+      fetchInteractions({
+        campaignId,
+        pageNumber: paginationModel.page + 1,
+        pageSize: paginationModel.pageSize,
+        searchText: debouncedSearchText || undefined,
+      }),
+    );
+  }, [dispatch, campaignId, paginationModel.page, paginationModel.pageSize, debouncedSearchText]);
 
   const uniqueSorted = (values: string[]): string[] =>
     Array.from(new Set(values.filter(Boolean))).sort();
@@ -166,10 +200,6 @@ export function Component() {
 
   const userOptions = toMultiSelectOptions(uniqueSorted(rows.map((r) => r.user.name)));
 
-  // Campaign options use `campaignId` as the value so `onToolbarFiltersChange`
-  // can sync the selection back to the URL search param without a name-→-id
-  // lookup, and the filter chip stays wired to the same identifier the
-  // fetch thunk consumes.
   const campaignOptions: MultiSelectOption[] =
     campaigns.length > 0
       ? [...campaigns]
@@ -240,9 +270,12 @@ export function Component() {
   };
 
   const tableHeader: DataGridTableHeaderProps = {
-    title: `${t('interactionsPageTitle')} (${rows.length})`,
+    title: totalRows >= 0
+      ? `${t('interactionsPageTitle')} (${totalRows})`
+      : t('interactionsPageTitle'),
     showSearch: true,
     searchType: 'basic',
+    onBasicSearch: setSearchText,
   };
 
   const columns: GridColDef<Interaction>[] = [
@@ -414,7 +447,22 @@ export function Component() {
 
   const handleRefresh = () => {
     if (campaignId === null) return;
-    dispatch(fetchInteractions({ campaignId }));
+    dispatch(
+      fetchInteractions({
+        campaignId,
+        pageNumber: paginationModel.page + 1,
+        pageSize: paginationModel.pageSize,
+        searchText: debouncedSearchText || undefined,
+      }),
+    );
+  };
+
+  const handlePaginationModelChange = (next: PaginationModel) => {
+    if (next.pageSize !== paginationModel.pageSize) {
+      setPaginationModel({ page: 0, pageSize: next.pageSize });
+    } else {
+      setPaginationModel(next);
+    }
   };
 
   const emptyStateMessage = campaignId === null
@@ -426,9 +474,6 @@ export function Component() {
   return (
     <Box sx={{ flex: 1, height: '100%' }}>
       <DataGrid
-        // Re-mount the grid when the resolved campaign changes so the
-        // Campaign filter chip re-reads `initialValue` from the URL param
-        // (the underlying toolbar keeps its own uncontrolled state).
         key={campaignId ?? 'no-campaign'}
         rows={rows}
         columns={columns}
@@ -440,11 +485,12 @@ export function Component() {
         onToolbarFiltersChange={handleToolbarFiltersChange}
         checkboxSelection
         disableRowSelectionOnClick
-        initialState={{
-          pagination: { paginationModel: { pageSize: DEFAULT_PAGE_SIZE } },
-        }}
-        pageSizeOptions={PAGE_SIZE_OPTIONS}
         pagination
+        paginationMode="server"
+        paginationModel={paginationModel}
+        onPaginationModelChange={handlePaginationModelChange}
+        rowCount={totalRows}
+        pageSizeOptions={PAGE_SIZE_OPTIONS}
         emptyStateMessage={emptyStateMessage}
       />
     </Box>

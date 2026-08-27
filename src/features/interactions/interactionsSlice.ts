@@ -16,11 +16,14 @@ interface InteractionsState {
   loading: boolean;
   error: NormalisedAxiosResponse | null;
 
+  pageNumber: number;
+  pageSize: number;
+  totalRows: number;
+
   campaigns: AssignedCampaign[];
   campaignsLoading: boolean;
   campaignsError: NormalisedAxiosResponse | null;
 
-  /** `campaignId -> QA denominator`, cached across page loads. */
   qaDenominatorByCampaignId: Record<number, number>;
   qaDenominatorLoading: boolean;
 }
@@ -29,6 +32,9 @@ const initialState: InteractionsState = {
   rows: [],
   loading: false,
   error: null,
+  pageNumber: 1,
+  pageSize: 50,
+  totalRows: -1,
   campaigns: [],
   campaignsLoading: false,
   campaignsError: null,
@@ -44,21 +50,36 @@ const interactionsSlice = createSlice({
       state.rows = [];
       state.error = null;
     },
+    resetInteractionsPagination(state) {
+      state.rows = [];
+      state.pageNumber = 1;
+      state.totalRows = -1;
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchInteractions.pending, (state) => {
+      .addCase(fetchInteractions.pending, (state, action) => {
         state.loading = true;
         state.error = null;
+        state.pageNumber = action.meta.arg.pageNumber ?? 1;
+        state.pageSize = action.meta.arg.pageSize ?? state.pageSize;
       })
       .addCase(fetchInteractions.fulfilled, (state, action) => {
         state.loading = false;
-        state.rows = action.payload.response?.data ?? [];
+        const rows = action.payload.response?.data ?? [];
+        state.rows = rows;
+        if (rows.length < state.pageSize) {
+          state.totalRows = (state.pageNumber - 1) * state.pageSize + rows.length;
+        } else if (state.totalRows < 0) {
+          state.totalRows = -1;
+        }
       })
       .addCase(fetchInteractions.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload ?? null;
         state.rows = [];
+        state.totalRows = 0;
       })
       .addCase(fetchAssignedCampaigns.pending, (state) => {
         state.campaignsLoading = true;
@@ -85,11 +106,14 @@ const interactionsSlice = createSlice({
   },
 });
 
-export const { clearInteractions } = interactionsSlice.actions;
+export const { clearInteractions, resetInteractionsPagination } = interactionsSlice.actions;
 
 export const selectInteractionRows = (state: RootState) => state.interactions.rows;
 export const selectInteractionsLoading = (state: RootState) => state.interactions.loading;
 export const selectInteractionsError = (state: RootState) => state.interactions.error;
+export const selectInteractionsTotalRows = (state: RootState) => state.interactions.totalRows;
+export const selectInteractionsPageNumber = (state: RootState) => state.interactions.pageNumber;
+export const selectInteractionsPageSize = (state: RootState) => state.interactions.pageSize;
 export const selectInteractionsCampaigns = (state: RootState) => state.interactions.campaigns;
 export const selectQaDenominatorByCampaignId = (state: RootState) =>
   state.interactions.qaDenominatorByCampaignId;
@@ -100,11 +124,6 @@ const selectCampaignNameById = createSelector(
     Object.fromEntries(campaigns.map((c) => [String(c.campaignId), c.campaignName])),
 );
 
-/**
- * Presentational selector — memoises the CallDetailsBean → Interaction
- * mapping and cross-joins campaign names + QA denominator so the page can
- * consume `Interaction[]` directly.
- */
 export const selectInteractions = createSelector(
   [
     selectInteractionRows,
