@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -19,17 +19,25 @@ import {
 
 type ToolbarFilterRecords = Parameters<NonNullable<DataGridProps['onToolbarFiltersChange']>>[0];
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { selectContactCenterId } from '@/features/auth/authSlice';
 import {
   fetchAssignedCampaigns,
   fetchInteractions,
+  type FetchInteractionsArgs,
 } from '../asyncActions';
 import {
   resetInteractionsPagination,
   selectInteractions,
+  selectInteractionsAfterCursor,
+  selectInteractionsBeforeCursor,
   selectInteractionsCampaigns,
   selectInteractionsError,
   selectInteractionsLoading,
+  selectInteractionsPageIndex,
   selectInteractionsTotalRows,
+  selectInteractionsTotalString,
+  setInteractionsPageIndex,
+  setInteractionsPageSize,
 } from '../interactionsSlice';
 import {
   InteractionChannel,
@@ -51,6 +59,19 @@ const CHANNEL_TYPE_ICON: Record<InteractionChannelType, IconName> = {
   [InteractionChannelType.OUTBOUND_MANUAL]: 'arrow-up-right',
   [InteractionChannelType.OUTBOUND_MULTI_DIAL]: 'arrow-up-right',
   [InteractionChannelType.OUTBOUND_AUTO_DIAL]: 'arrow-up-right',
+};
+
+/**
+ * Chip-value → wire `channel_type` mapping. The backend expects lowercase
+ * `voice` / `whatsapp` / `sms` / `mail` / `chat` on the `channel_type` query
+ * param of §4 row #16.
+ */
+const CHANNEL_TO_WIRE: Record<InteractionChannel, string> = {
+  [InteractionChannel.CALL]: 'voice',
+  [InteractionChannel.WHATSAPP]: 'whatsapp',
+  [InteractionChannel.SMS]: 'sms',
+  [InteractionChannel.MAIL]: 'mail',
+  [InteractionChannel.CHAT]: 'chat',
 };
 
 const PAGE_SIZE_OPTIONS: number[] = [10, 50, 100, 200];
@@ -127,32 +148,58 @@ export function Component() {
   const hasValidCampaignId = Number.isFinite(parsedCampaignId);
   const campaignId = hasValidCampaignId ? parsedCampaignId : null;
 
+  const contactCenterId = useAppSelector(selectContactCenterId);
   const rows = useAppSelector(selectInteractions);
   const loading = useAppSelector(selectInteractionsLoading);
   const fetchError = useAppSelector(selectInteractionsError);
   const totalRows = useAppSelector(selectInteractionsTotalRows);
+  const totalString = useAppSelector(selectInteractionsTotalString);
+  const beforeCursor = useAppSelector(selectInteractionsBeforeCursor);
+  const afterCursor = useAppSelector(selectInteractionsAfterCursor);
+  const storedPageIndex = useAppSelector(selectInteractionsPageIndex);
   const campaigns = useAppSelector(selectInteractionsCampaigns);
+
+  const activeCampaign = useMemo(
+    () => campaigns.find((c) => c.campaignId === campaignId) ?? null,
+    [campaigns, campaignId],
+  );
+  const processId = activeCampaign?.processId;
+  // The endpoint requires a ccId in the path — prefer the campaign's own
+  // (in case the supervisor spans multiple CCs) and fall back to the session's
+  // contactCenterId.
+  const resolvedCcId = activeCampaign?.contactCenterId ?? contactCenterId;
 
   const [paginationModel, setPaginationModel] =
     useState<PaginationModel>(initialPaginationModel);
+  const [selectedChannels, setSelectedChannels] = useState<InteractionChannel[]>([]);
   const [searchText, setSearchText] = useState('');
   const [debouncedSearchText, setDebouncedSearchText] = useState('');
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearchText(searchText.trim()), 300);
     return () => window.clearTimeout(timer);
   }, [searchText]);
+
   const [prevCampaignId, setPrevCampaignId] = useState<number | null>(campaignId);
   if (prevCampaignId !== campaignId) {
     setPrevCampaignId(campaignId);
     setPaginationModel(initialPaginationModel);
     setSearchText('');
     setDebouncedSearchText('');
+    setSelectedChannels([]);
     dispatch(resetInteractionsPagination());
   }
+
   const [prevSearchText, setPrevSearchText] = useState(debouncedSearchText);
   if (prevSearchText !== debouncedSearchText) {
     setPrevSearchText(debouncedSearchText);
-    setPaginationModel(initialPaginationModel);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    dispatch(resetInteractionsPagination());
+  }
+
+  const [prevChannels, setPrevChannels] = useState<InteractionChannel[]>(selectedChannels);
+  if (prevChannels.join('|') !== selectedChannels.join('|')) {
+    setPrevChannels(selectedChannels);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
     dispatch(resetInteractionsPagination());
   }
 
@@ -177,17 +224,62 @@ export function Component() {
     );
   }, [campaigns, campaignId, setSearchParams]);
 
+  /**
+   * Cursor-based paging shim. The DataGrid emits page-index deltas but the
+   * endpoint (§4 row #16) only exposes prev/next cursors — so we translate:
+   *   next  (page +1) → afterCursor
+   *   prev  (page -1) → beforeCursor
+   *   reset (page  0) → no cursor
+   * Non-adjacent jumps (e.g. page 0 → page 4) are not supported by cursor
+   * pagination and get clamped to `afterCursor` (i.e. next page from current).
+   */
+  const cursorForNextFetch = (
+    nextPage: number,
+    prevPage: number,
+  ): { beforeCursor?: string; afterCursor?: string } => {
+    if (nextPage === 0) return {};
+    if (nextPage === prevPage + 1 && afterCursor) return { afterCursor };
+    if (nextPage === prevPage - 1 && beforeCursor) return { beforeCursor };
+    if (nextPage > prevPage && afterCursor) return { afterCursor };
+    if (nextPage < prevPage && beforeCursor) return { beforeCursor };
+    return {};
+  };
+
   useEffect(() => {
     if (campaignId === null) return;
-    dispatch(
-      fetchInteractions({
-        campaignId,
-        pageNumber: paginationModel.page + 1,
-        pageSize: paginationModel.pageSize,
-        searchText: debouncedSearchText || undefined,
-      }),
-    );
-  }, [dispatch, campaignId, paginationModel.page, paginationModel.pageSize, debouncedSearchText]);
+    if (resolvedCcId === undefined || processId === undefined) return;
+
+    const cursors = cursorForNextFetch(paginationModel.page, storedPageIndex);
+    const args: FetchInteractionsArgs = {
+      ccId: resolvedCcId,
+      processId,
+      campaignIds: [campaignId],
+      limit: paginationModel.pageSize,
+      channelTypes:
+        selectedChannels.length > 0
+          ? selectedChannels.map((c) => CHANNEL_TO_WIRE[c])
+          : undefined,
+      customerName: debouncedSearchText || undefined,
+      ...cursors,
+    };
+
+    dispatch(setInteractionsPageIndex(paginationModel.page));
+    dispatch(fetchInteractions(args));
+    // The `cursorForNextFetch` closure references `beforeCursor` / `afterCursor`
+    // / `storedPageIndex` — but those come from the slice and only change *after*
+    // fetch completes, so we intentionally exclude them from the dep list to
+    // avoid a fetch loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    dispatch,
+    campaignId,
+    resolvedCcId,
+    processId,
+    paginationModel.page,
+    paginationModel.pageSize,
+    debouncedSearchText,
+    selectedChannels,
+  ]);
 
   const uniqueSorted = (values: string[]): string[] =>
     Array.from(new Set(values.filter(Boolean))).sort();
@@ -212,6 +304,8 @@ export function Component() {
       : toMultiSelectOptions(uniqueSorted(rows.map((r) => r.campaign)));
 
   const campaignInitialValue = campaignId !== null ? [String(campaignId)] : undefined;
+  const channelInitialValue =
+    selectedChannels.length > 0 ? selectedChannels.map((c) => String(c)) : undefined;
 
   const customToolbarFilters: ToolbarFilterConfig[] = [
     {
@@ -225,6 +319,7 @@ export function Component() {
       type: 'multi-select',
       label: t('interactionsFilterChannel'),
       multiSelectOptions: channelOptions,
+      initialValue: channelInitialValue,
     },
     {
       id: 'user',
@@ -250,29 +345,42 @@ export function Component() {
   ];
 
   const handleToolbarFiltersChange = (appliedFilters: ToolbarFilterRecords): void => {
-    const raw = appliedFilters.campaign;
-    const picked = Array.isArray(raw) ? raw[0] : undefined;
-    const nextCampaignId = picked && picked.length > 0 ? picked : null;
+    const rawCampaign = appliedFilters.campaign;
+    const pickedCampaign = Array.isArray(rawCampaign) ? rawCampaign[0] : undefined;
+    const nextCampaignId = pickedCampaign && pickedCampaign.length > 0 ? pickedCampaign : null;
     const currentCampaignId = searchParams.get('campaignId');
-    if (nextCampaignId === currentCampaignId) return;
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        if (nextCampaignId === null) {
-          next.delete('campaignId');
-        } else {
-          next.set('campaignId', nextCampaignId);
-        }
-        return next;
-      },
-      { replace: true },
-    );
+    if (nextCampaignId !== currentCampaignId) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (nextCampaignId === null) {
+            next.delete('campaignId');
+          } else {
+            next.set('campaignId', nextCampaignId);
+          }
+          return next;
+        },
+        { replace: true },
+      );
+    }
+
+    const rawChannel = appliedFilters.channel;
+    const pickedChannels = Array.isArray(rawChannel)
+      ? (rawChannel.filter((v): v is InteractionChannel =>
+          Object.values(InteractionChannel).includes(v as InteractionChannel),
+        ) as InteractionChannel[])
+      : [];
+    setSelectedChannels(pickedChannels);
   };
 
+  // Title badge only renders a count once the backend surfaces a real integer.
+  // Delta noted in §4 row #16 (real integer `metadata.total`).
+  const titleCount = totalRows >= 0 ? totalRows : totalString ?? null;
   const tableHeader: DataGridTableHeaderProps = {
-    title: totalRows >= 0
-      ? `${t('interactionsPageTitle')} (${totalRows})`
-      : t('interactionsPageTitle'),
+    title:
+      titleCount != null
+        ? `${t('interactionsPageTitle')} (${titleCount})`
+        : t('interactionsPageTitle'),
     showSearch: true,
     searchType: 'basic',
     onBasicSearch: setSearchText,
@@ -446,13 +554,21 @@ export function Component() {
   ];
 
   const handleRefresh = () => {
-    if (campaignId === null) return;
+    if (campaignId === null || resolvedCcId === undefined || processId === undefined) return;
     dispatch(
       fetchInteractions({
-        campaignId,
-        pageNumber: paginationModel.page + 1,
-        pageSize: paginationModel.pageSize,
-        searchText: debouncedSearchText || undefined,
+        ccId: resolvedCcId,
+        processId,
+        campaignIds: [campaignId],
+        limit: paginationModel.pageSize,
+        channelTypes:
+          selectedChannels.length > 0
+            ? selectedChannels.map((c) => CHANNEL_TO_WIRE[c])
+            : undefined,
+        customerName: debouncedSearchText || undefined,
+        // Refresh always reloads the current cursor position.
+        beforeCursor: beforeCursor ?? undefined,
+        afterCursor: afterCursor ?? undefined,
       }),
     );
   };
@@ -460,6 +576,7 @@ export function Component() {
   const handlePaginationModelChange = (next: PaginationModel) => {
     if (next.pageSize !== paginationModel.pageSize) {
       setPaginationModel({ page: 0, pageSize: next.pageSize });
+      dispatch(setInteractionsPageSize(next.pageSize));
     } else {
       setPaginationModel(next);
     }

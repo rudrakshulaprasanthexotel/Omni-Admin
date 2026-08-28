@@ -1,4 +1,3 @@
-import { CallDetailsApi } from '@/boilerplate/dataEngineApis/apis/call-details-api';
 import { CallHistoryApi } from '@/boilerplate/dataEngineApis/apis/call-history-api';
 import { CallQAParameterApi } from '@/boilerplate/dataEngineApis/apis/call-qaparameter-api';
 import { CallQAScoreApi } from '@/boilerplate/dataEngineApis/apis/call-qascore-api';
@@ -14,12 +13,16 @@ export const dataEngineConfiguration = new DataEngineConfiguration({
 
 /**
  * Data Engine REST client. All endpoints reused by the Interaction Details
- * page (row load, QA score, campaign QA denominator, voice-log playback) are
- * exposed here. New endpoints go here, not into feature-level thunks, so the
- * axios instance + auth interceptors from `.` are shared across the app.
+ * page — row load (§4 row #16 → `interactions`), QA score, campaign QA
+ * denominator, voice-log playback — are exposed here. New endpoints go here,
+ * not into feature-level thunks, so the axios instance + auth interceptors
+ * from `.` are shared across the app.
+ *
+ * Note: `CallDetailsApi` (voice-only `POST /voice/callHistoryWithScoring/search`)
+ * was retired when the row-load switched to the cross-channel
+ * `GET /v1/cc-list/{ccId}/process-list/{processId}/interactions` endpoint.
  */
 export const dataEngineApis = {
-  callDetails: new CallDetailsApi(dataEngineConfiguration, undefined, apiClient),
   callHistory: new CallHistoryApi(dataEngineConfiguration, undefined, apiClient),
   callQaParameter: new CallQAParameterApi(dataEngineConfiguration, undefined, apiClient),
   callQaScore: new CallQAScoreApi(dataEngineConfiguration, undefined, apiClient),

@@ -18,6 +18,13 @@ export const InteractionChannelType = {
 export type InteractionChannelType =
   (typeof InteractionChannelType)[keyof typeof InteractionChannelType];
 
+/**
+ * Historical vs live view. The Interaction Details page defaults to `CLOSED`
+ * (audit list). `OPEN` maps to the same endpoint with `state=OPEN` and is
+ * reserved for a future live-monitoring toggle.
+ */
+export type InteractionState = 'OPEN' | 'CLOSED';
+
 export interface Interaction {
   id: string;
   customer: {
@@ -41,8 +48,16 @@ export interface Interaction {
   queue: string;
   /** ISO 8601 timestamp for the "Date Added" column. */
   dateAdded: string;
-  /** All time metrics are stored as total seconds and formatted at render-time. */
+  /**
+   * Aggregate interaction duration in seconds (voice + digital). Sourced from
+   * `channel_data.duration` on the cross-channel bean.
+   */
   interactionTimeSeconds: number;
+  /**
+   * Voice per-row timers. Not populated by the current backend — these are a
+   * delta on §4 row #16 of `InteractionDetails_Figma_vs_GWT_Validation.md`.
+   * Default to `0` (not `undefined`) so the "hh:mm:ss" formatter renders `00:00:00`.
+   */
   holdTimeSeconds: number;
   ivrTimeSeconds: number;
   setupTimeSeconds: number;
@@ -52,4 +67,11 @@ export interface Interaction {
   dispositionCode: string;
   /** Display-only unique interaction id shown in the last column. Falls back to `id`. */
   uniqueId?: string;
+  /**
+   * Row Play sources. Voice + chat come from the row bean; mail body /
+   * attachments still wait on §4 row #17 (`/interactions/{id}/attachments`).
+   */
+  voiceLogUrl?: string;
+  chatTranscriptUrl?: string;
+  interactionState?: InteractionState;
 }
