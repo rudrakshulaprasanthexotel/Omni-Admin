@@ -206,6 +206,8 @@ export const selectInteractionsAfterCursor = (state: RootState) =>
 export const selectInteractionsCurrentPageCount = (state: RootState) =>
   state.interactions.currentPageCount;
 export const selectInteractionsCampaigns = (state: RootState) => state.interactions.campaigns;
+export const selectInteractionsCampaignsLoading = (state: RootState) =>
+  state.interactions.campaignsLoading;
 export const selectQaDenominatorByCampaignId = (state: RootState) =>
   state.interactions.qaDenominatorByCampaignId;
 

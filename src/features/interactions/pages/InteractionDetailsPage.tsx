@@ -10,18 +10,26 @@ import {
   useTheme,
   type AdvancedSearchPayload,
   type DataGridConsolidatedFilterConfig,
+  type DataGridNestedListConfig,
   type DataGridProps,
   type DataGridTableHeaderProps,
   type GridColDef,
   type GridRenderCellParams,
   type IconName,
   type MultiSelectOption,
+  type NestedListItem,
   type ToolbarFilterConfig,
 } from '@exotel-npm-dev/signal-design-system';
 
 type ToolbarFilterRecords = Parameters<NonNullable<DataGridProps['onToolbarFiltersChange']>>[0];
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectContactCenterId } from '@/features/auth/authSlice';
+import { fetchAssignedProcesses } from '@/features/process/asyncActions';
+import {
+  selectAssignedProcesses,
+  selectAssignedProcessesLoaded,
+  selectAssignedProcessesLoading,
+} from '@/features/process/processSlice';
 import {
   fetchAssignedCampaigns,
   fetchInteractions,
@@ -33,6 +41,7 @@ import {
   selectInteractionsAfterCursor,
   selectInteractionsBeforeCursor,
   selectInteractionsCampaigns,
+  selectInteractionsCampaignsLoading,
   selectInteractionsError,
   selectInteractionsLoading,
   selectInteractionsPageIndex,
@@ -47,6 +56,7 @@ import {
   type Interaction,
 } from '../types';
 import IdentityCell from '../components/IdentityCell';
+import { SelectorAvatar, SelectorListItem } from '../components/SelectorEntity';
 
 const CHANNEL_ICON: Record<InteractionChannel, IconName> = {
   [InteractionChannel.CALL]: 'phone',
@@ -150,6 +160,10 @@ export function Component() {
   const hasValidCampaignId = Number.isFinite(parsedCampaignId);
   const campaignId = hasValidCampaignId ? parsedCampaignId : null;
 
+  const processIdParam = searchParams.get('processId');
+  const parsedProcessId = processIdParam ? Number(processIdParam) : Number.NaN;
+  const selectedProcessId = Number.isFinite(parsedProcessId) ? parsedProcessId : null;
+
   const contactCenterId = useAppSelector(selectContactCenterId);
   const rows = useAppSelector(selectInteractions);
   const loading = useAppSelector(selectInteractionsLoading);
@@ -160,22 +174,44 @@ export function Component() {
   const afterCursor = useAppSelector(selectInteractionsAfterCursor);
   const storedPageIndex = useAppSelector(selectInteractionsPageIndex);
   const campaigns = useAppSelector(selectInteractionsCampaigns);
+  const campaignsLoading = useAppSelector(selectInteractionsCampaignsLoading);
+  const processes = useAppSelector(selectAssignedProcesses);
+  const processesLoading = useAppSelector(selectAssignedProcessesLoading);
+  const processesLoaded = useAppSelector(selectAssignedProcessesLoaded);
 
   const activeCampaign = useMemo(
     () => campaigns.find((c) => c.campaignId === campaignId) ?? null,
     [campaigns, campaignId],
   );
-  const processId = activeCampaign?.processId;
+  // Falls back to the campaign's processId so a `?campaignId=` deep link still
+  // resolves before the assigned-process list lands.
+  const processId = selectedProcessId ?? activeCampaign?.processId;
   // The endpoint requires a ccId in the path — prefer the campaign's own
   // (in case the supervisor spans multiple CCs) and fall back to the session's
   // contactCenterId.
   const resolvedCcId = activeCampaign?.contactCenterId ?? contactCenterId;
+
+  const campaignsInProcess = campaigns.filter((c) => c.processId === selectedProcessId);
+
+  // The effects below key off these primitives rather than the arrays above,
+  // which are rebuilt every render.
+  const isProcessAssigned = processes.some((p) => p.processId === selectedProcessId);
+  const firstProcessId = processes[0]?.processId ?? null;
+  const isCampaignInProcess = campaignsInProcess.some((c) => c.campaignId === campaignId);
+  const firstCampaignIdInProcess = campaignsInProcess[0]?.campaignId ?? null;
 
   const [paginationModel, setPaginationModel] =
     useState<PaginationModel>(initialPaginationModel);
   const [selectedChannels, setSelectedChannels] = useState<InteractionChannel[]>([]);
   const [committedSearch, setCommittedSearch] = useState<AdvancedSearchPayload | null>(null);
   const searchQuery = committedSearch?.searchValue ?? '';
+  const [campaignSearch, setCampaignSearch] = useState('');
+
+  const [prevProcessId, setPrevProcessId] = useState<number | null>(selectedProcessId);
+  if (prevProcessId !== selectedProcessId) {
+    setPrevProcessId(selectedProcessId);
+    setCampaignSearch('');
+  }
 
   const [prevCampaignId, setPrevCampaignId] = useState<number | null>(campaignId);
   if (prevCampaignId !== campaignId) {
@@ -206,20 +242,39 @@ export function Component() {
     }
   }, [dispatch, campaigns.length]);
 
+  // Normally already loaded by `useSessionBootstrap`; this covers a hard reload
+  // straight onto /interactions before the bootstrap thunk settles.
   useEffect(() => {
-    if (campaigns.length === 0) return;
-    if (campaignId !== null) return;
-    const firstCampaignId = campaigns[0]?.campaignId;
-    if (firstCampaignId === undefined || firstCampaignId === null) return;
+    if (processesLoaded || processesLoading) return;
+    dispatch(fetchAssignedProcesses());
+  }, [dispatch, processesLoaded, processesLoading]);
+
+  useEffect(() => {
+    if (firstProcessId === null) return;
+    if (isProcessAssigned) return;
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
-        next.set('campaignId', String(firstCampaignId));
+        next.set('processId', String(firstProcessId));
+        next.delete('campaignId');
         return next;
       },
       { replace: true },
     );
-  }, [campaigns, campaignId, setSearchParams]);
+  }, [firstProcessId, isProcessAssigned, setSearchParams]);
+
+  useEffect(() => {
+    if (firstCampaignIdInProcess === null) return;
+    if (isCampaignInProcess) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('campaignId', String(firstCampaignIdInProcess));
+        return next;
+      },
+      { replace: true },
+    );
+  }, [firstCampaignIdInProcess, isCampaignInProcess, setSearchParams]);
 
   /**
    * Cursor-based paging shim. The DataGrid emits page-index deltas but the
@@ -289,18 +344,6 @@ export function Component() {
 
   const userOptions = toMultiSelectOptions(uniqueSorted(rows.map((r) => r.user.name)));
 
-  const campaignOptions: MultiSelectOption[] =
-    campaigns.length > 0
-      ? [...campaigns]
-        .sort((a, b) => a.campaignName.localeCompare(b.campaignName))
-        .map((c) => ({
-          id: String(c.campaignId),
-          label: c.campaignName,
-          value: String(c.campaignId),
-        }))
-      : toMultiSelectOptions(uniqueSorted(rows.map((r) => r.campaign)));
-
-  const campaignInitialValue = campaignId !== null ? [String(campaignId)] : undefined;
   const channelInitialValue =
     selectedChannels.length > 0 ? selectedChannels.map((c) => String(c)) : undefined;
 
@@ -332,13 +375,6 @@ export function Component() {
       allowPastDates: true,
       allowFutureDates: true,
     },
-    {
-      id: 'campaign',
-      type: 'multi-select',
-      label: t('interactionsFilterCampaign'),
-      multiSelectOptions: campaignOptions,
-      initialValue: campaignInitialValue,
-    },
   ];
 
   const consolidatedFilter: DataGridConsolidatedFilterConfig = {
@@ -347,26 +383,76 @@ export function Component() {
     filterSearchPlaceholder: t('interactionsFiltersSearchPlaceholder'),
   };
 
-  const handleToolbarFiltersChange = (appliedFilters: ToolbarFilterRecords): void => {
-    const rawCampaign = appliedFilters.campaign;
-    const pickedCampaign = Array.isArray(rawCampaign) ? rawCampaign[0] : undefined;
-    const nextCampaignId = pickedCampaign && pickedCampaign.length > 0 ? pickedCampaign : null;
-    const currentCampaignId = searchParams.get('campaignId');
-    if (nextCampaignId !== currentCampaignId) {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          if (nextCampaignId === null) {
-            next.delete('campaignId');
-          } else {
-            next.set('campaignId', nextCampaignId);
-          }
-          return next;
-        },
-        { replace: true },
-      );
-    }
+  // Clearing the campaign is intentional — the effect above then lands on the
+  // new process's first campaign.
+  const handleProcessSelect = (nextProcessId: number) => {
+    if (nextProcessId === selectedProcessId) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('processId', String(nextProcessId));
+        next.delete('campaignId');
+        return next;
+      },
+      { replace: true },
+    );
+  };
 
+  const handleCampaignSelect = (nextCampaignId: number) => {
+    if (nextCampaignId === campaignId) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('campaignId', String(nextCampaignId));
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  const processItems: NestedListItem[] = processes.map((p) => ({
+    id: p.processId,
+    label: p.processName,
+  }));
+
+  // `NestedList` renders the search box but does not filter, so narrow the
+  // child list here.
+  const campaignQuery = campaignSearch.trim().toLowerCase();
+  const campaignItems: NestedListItem[] = campaignsInProcess
+    .filter((c) => c.campaignName.toLowerCase().includes(campaignQuery))
+    .map((c) => ({ id: c.campaignId, label: c.campaignName }));
+
+  const nestedList: DataGridNestedListConfig = {
+    parentList: processItems,
+    childList: campaignItems,
+    parentListLoading: processesLoading,
+    childListLoading: campaignsLoading,
+    selectedParentId: selectedProcessId,
+    selectedChildIds: campaignId !== null ? [campaignId] : [],
+    customParentListRenderer: ({ item }) => (
+      <SelectorListItem name={String(item.label)} kind="process" />
+    ),
+    customChildListRenderer: ({ item }) => (
+      <SelectorListItem name={String(item.label)} kind="campaign" />
+    ),
+    onParentSelect: (item) => handleProcessSelect(Number(item.id)),
+    onChildSelect: (item) => handleCampaignSelect(Number(item.id)),
+    onChildSearch: setCampaignSearch,
+    childSearchValue: campaignSearch,
+    childSearchPlaceholder: t('interactionsSelectorCampaignSearchPlaceholder'),
+    parentAriaLabel: t('interactionsSelectorProcessAriaLabel'),
+    childAriaLabel: t('interactionsSelectorCampaignAriaLabel'),
+    parentEmptyText: t('interactionsSelectorProcessEmpty'),
+    childEmptyText: t('interactionsSelectorCampaignEmpty'),
+    trigger: {
+      label: activeCampaign?.campaignName ?? t('interactionsSelectorTriggerPlaceholder'),
+      startAdornment: activeCampaign ? (
+        <SelectorAvatar name={activeCampaign.campaignName} kind="campaign" size={20} />
+      ) : undefined,
+    },
+  };
+
+  const handleToolbarFiltersChange = (appliedFilters: ToolbarFilterRecords): void => {
     const rawChannel = appliedFilters.channel;
     const pickedChannels = Array.isArray(rawChannel)
       ? (rawChannel.filter((v): v is InteractionChannel =>
@@ -616,6 +702,7 @@ export function Component() {
         tableHeader={tableHeader}
         customToolbarFilters={customToolbarFilters}
         consolidatedFilter={consolidatedFilter}
+        nestedList={nestedList}
         onRefresh={handleRefresh}
         onToolbarFiltersChange={handleToolbarFiltersChange}
         checkboxSelection
