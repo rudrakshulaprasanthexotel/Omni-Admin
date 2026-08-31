@@ -5,9 +5,11 @@ import type {
   CustomCursorMetadata,
   InteractionOutPutBean,
 } from '@/boilerplate/dataEngineApis/models';
+import type { QueueDetailBean } from '@/boilerplate/cmsApis/models';
 import { GetInteractionWithFilterStateEnum } from '@/boilerplate/dataEngineApis/apis/interactions-api';
+import { cmsApis } from '@/services/apiClient/cmsApis';
 import { dataEngineApis } from '@/services/apiClient/dataEngineApis';
-import { supervisorApis } from '@/services/apiClient/supervisorApis';
+import { supervisorApis, type DispositionCodeBean } from '@/services/apiClient/supervisorApis';
 import {
   normaliseAxiosResponse,
   type NormalisedAxiosResponse,
@@ -176,6 +178,44 @@ export const fetchCampaignQaDenominator = createAsyncThunk<
     }
   },
 );
+
+export const fetchCampaignQueues = createAsyncThunk<
+  NormalisedAxiosResponse<QueueDetailBean[]>,
+  number,
+  { rejectValue: NormalisedAxiosResponse }
+>('interactions/fetchCampaignQueues', async (campaignId, { rejectWithValue }) => {
+  try {
+    const response = await cmsApis.campaign.getAllAgentQueueDetailedByCampaign(campaignId);
+    return normaliseAxiosResponse(response, 'success');
+  } catch (error: unknown) {
+    if (error instanceof AxiosError) {
+      return rejectWithValue(normaliseAxiosResponse(error, 'error'));
+    }
+    return rejectWithValue({
+      isSuccess: false,
+      message: 'Failed to load queues',
+    });
+  }
+});
+
+export const fetchCampaignDispositions = createAsyncThunk<
+  NormalisedAxiosResponse<DispositionCodeBean[]>,
+  number,
+  { rejectValue: NormalisedAxiosResponse }
+>('interactions/fetchCampaignDispositions', async (campaignId, { rejectWithValue }) => {
+  try {
+    const response = await supervisorApis.getDispositionCodesByCampaign(campaignId);
+    return normaliseAxiosResponse(response, 'success');
+  } catch (error: unknown) {
+    if (error instanceof AxiosError) {
+      return rejectWithValue(normaliseAxiosResponse(error, 'error'));
+    }
+    return rejectWithValue({
+      isSuccess: false,
+      message: 'Failed to load dispositions',
+    });
+  }
+});
 
 export const fetchAssignedCampaigns = createAsyncThunk<
   NormalisedAxiosResponse<Awaited<ReturnType<typeof supervisorApis.getAssignedCampaigns>>['data']>,

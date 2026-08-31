@@ -66,6 +66,13 @@ export interface DispositionEntry {
   dispositionCodes: Array<{ code: string; name: string }>;
 }
 
+/** Flat disposition code from `GET /cc/dispositionCodes/getByCampaign`. */
+export interface DispositionCodeBean {
+  dispositionCodeId?: number;
+  dispositionCodeName?: string;
+  dispositionClassId?: number;
+}
+
 export interface ContactCenterSettings {
   contactCenterId?: number;
   accountId?: string;
@@ -202,6 +209,19 @@ export const supervisorApis = {
   ): Promise<AxiosResponse<VoiceCampaignSettings>> {
     return apiClient.get<VoiceCampaignSettings>(
       `${AMEYO_REST_BASE}/voice/outboundVoiceCampaignSettings/${campaignId}`,
+    );
+  },
+
+  /**
+   * Flat list of disposition codes on the campaign's disposition plan.
+   * `GET /ameyorestapi/cc/dispositionCodes/getByCampaign`.
+   */
+  getDispositionCodesByCampaign(
+    campaignId: number,
+    info = false,
+  ): Promise<AxiosResponse<DispositionCodeBean[]>> {
+    return apiClient.get<DispositionCodeBean[]>(
+      `${CC_REST_BASE}/dispositionCodes/getByCampaign${buildQuery({ campaignId, info })}`,
     );
   },
 

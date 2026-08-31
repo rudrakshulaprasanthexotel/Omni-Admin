@@ -89,6 +89,8 @@
     "interactionsFilterChannel": "Channel",
     "interactionsFilterUser": "User",
     "interactionsFilterDateRange": "Date Range",
+    "interactionsFilterQueue": "Queue",
+    "interactionsFilterDisposition": "Disposition",
     "interactionsSelectorTriggerPlaceholder": "Select Campaign",
     "interactionsSelectorProcessAriaLabel": "Processes",
     "interactionsSelectorCampaignAriaLabel": "Campaigns",

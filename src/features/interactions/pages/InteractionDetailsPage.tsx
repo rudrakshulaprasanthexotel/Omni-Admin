@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -23,6 +23,9 @@ import {
 
 type ToolbarFilterRecords = Parameters<NonNullable<DataGridProps['onToolbarFiltersChange']>>[0];
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { debounce } from '@/shared/utils/debounce';
+import type { QueueDetailBean } from '@/boilerplate/cmsApis/models';
+import type { DispositionCodeBean } from '@/services/apiClient/supervisorApis';
 import { selectContactCenterId } from '@/features/auth/authSlice';
 import { fetchAssignedProcesses } from '@/features/process/asyncActions';
 import {
@@ -32,6 +35,8 @@ import {
 } from '@/features/process/processSlice';
 import {
   fetchAssignedCampaigns,
+  fetchCampaignDispositions,
+  fetchCampaignQueues,
   fetchInteractions,
   type FetchInteractionsArgs,
 } from '../asyncActions';
@@ -84,6 +89,38 @@ const CHANNEL_TO_WIRE: Record<InteractionChannel, string> = {
   [InteractionChannel.SMS]: 'sms',
   [InteractionChannel.MAIL]: 'mail',
   [InteractionChannel.CHAT]: 'chat',
+};
+
+type SortModel = NonNullable<DataGridProps['sortModel']>;
+
+/**
+ * Grid column → `sort_by` wire column. The endpoint sorts on the snake_case
+ * bean fields, so only columns backed by a top-level field can be sorted;
+ * everything else is marked `sortable: false` on its column definition.
+ */
+const SORT_FIELD_TO_WIRE: Record<string, string> = {
+  customer: 'customer_name',
+  channel: 'channel_name',
+  channelType: 'direction',
+  user: 'last_assigned_user_name',
+  campaign: 'last_campaign_name',
+  queue: 'last_queue_name',
+  dateAdded: 'date_added',
+  dispositionCode: 'last_disposition',
+  uniqueId: 'interaction_relation_id',
+};
+
+const DEFAULT_SORT_MODEL: SortModel = [{ field: 'dateAdded', sort: 'desc' }];
+
+/** Builds `sort_by=<column>:<asc|desc>,…`; `undefined` lets the thunk default apply. */
+const toSortBy = (model: SortModel): string | undefined => {
+  const parts = model
+    .map(({ field, sort }) => {
+      const column = SORT_FIELD_TO_WIRE[field];
+      return column ? `${column}:${sort ?? 'asc'}` : null;
+    })
+    .filter((part): part is string => part != null);
+  return parts.length > 0 ? parts.join(',') : undefined;
 };
 
 const PAGE_SIZE_OPTIONS: number[] = [10, 50, 100, 200];
@@ -140,6 +177,31 @@ const IconTextCell = ({
 
 const toMultiSelectOptions = (values: string[]): MultiSelectOption[] =>
   values.map((value) => ({ id: value, label: value, value }));
+
+const toQueueOptions = (queues: QueueDetailBean[]): MultiSelectOption[] =>
+  queues
+    .filter((queue): queue is QueueDetailBean & { queueId: number } =>
+      typeof queue.queueId === 'number',
+    )
+    .map((queue) => {
+      const id = String(queue.queueId);
+      return {
+        id,
+        value: id,
+        label: queue.queueName?.trim() || id,
+      };
+    });
+
+const toDispositionOptions = (codes: DispositionCodeBean[]): MultiSelectOption[] =>
+  codes
+    .map((code) => {
+      const name = code.dispositionCodeName?.trim();
+      if (!name) return null;
+      const id =
+        code.dispositionCodeId != null ? String(code.dispositionCodeId) : name;
+      return { id, value: name, label: name };
+    })
+    .filter((option): option is MultiSelectOption => option != null);
 
 export function Component() {
   const { t } = useTranslation();
@@ -202,9 +264,20 @@ export function Component() {
 
   const [paginationModel, setPaginationModel] =
     useState<PaginationModel>(initialPaginationModel);
+  const [sortModel, setSortModel] = useState<SortModel>(DEFAULT_SORT_MODEL);
+  const sortBy = toSortBy(sortModel);
   const [selectedChannels, setSelectedChannels] = useState<InteractionChannel[]>([]);
-  const [committedSearch, setCommittedSearch] = useState<AdvancedSearchPayload | null>(null);
-  const searchQuery = committedSearch?.searchValue ?? '';
+  const [queues, setQueues] = useState<QueueDetailBean[]>([]);
+  const [selectedQueueIds, setSelectedQueueIds] = useState<number[]>([]);
+  const [dispositions, setDispositions] = useState<DispositionCodeBean[]>([]);
+  const [selectedDispositions, setSelectedDispositions] = useState<string[]>([]);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const commitSearch = useRef(
+    debounce((value: string) => {
+      setSearchQuery(value);
+    }),
+  ).current;
   const [campaignSearch, setCampaignSearch] = useState('');
 
   const [prevProcessId, setPrevProcessId] = useState<number | null>(selectedProcessId);
@@ -217,8 +290,14 @@ export function Component() {
   if (prevCampaignId !== campaignId) {
     setPrevCampaignId(campaignId);
     setPaginationModel(initialPaginationModel);
-    setCommittedSearch(null);
+    setSearchInput('');
+    setSearchQuery('');
+    commitSearch.cancel();
     setSelectedChannels([]);
+    setSelectedQueueIds([]);
+    setQueues([]);
+    setSelectedDispositions([]);
+    setDispositions([]);
     dispatch(resetInteractionsPagination());
   }
 
@@ -235,6 +314,32 @@ export function Component() {
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
     dispatch(resetInteractionsPagination());
   }
+
+  const [prevQueueIds, setPrevQueueIds] = useState<number[]>(selectedQueueIds);
+  if (prevQueueIds.join('|') !== selectedQueueIds.join('|')) {
+    setPrevQueueIds(selectedQueueIds);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    dispatch(resetInteractionsPagination());
+  }
+
+  const [prevDispositions, setPrevDispositions] = useState<string[]>(selectedDispositions);
+  if (prevDispositions.join('|') !== selectedDispositions.join('|')) {
+    setPrevDispositions(selectedDispositions);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    dispatch(resetInteractionsPagination());
+  }
+
+  // Cursors are tied to the previous ordering, so a new sort restarts paging.
+  const [prevSortBy, setPrevSortBy] = useState(sortBy);
+  if (prevSortBy !== sortBy) {
+    setPrevSortBy(sortBy);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    dispatch(resetInteractionsPagination());
+  }
+
+  useEffect(() => {
+    return () => commitSearch.cancel();
+  }, [commitSearch]);
 
   useEffect(() => {
     if (campaigns.length === 0) {
@@ -276,6 +381,42 @@ export function Component() {
     );
   }, [firstCampaignIdInProcess, isCampaignInProcess, setSearchParams]);
 
+  useEffect(() => {
+    if (campaignId === null) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await dispatch(fetchCampaignQueues(campaignId)).unwrap();
+        if (!cancelled) setQueues(result.response?.data ?? []);
+      } catch {
+        if (!cancelled) setQueues([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, campaignId]);
+
+  useEffect(() => {
+    if (campaignId === null) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await dispatch(fetchCampaignDispositions(campaignId)).unwrap();
+        if (!cancelled) setDispositions(result.response?.data ?? []);
+      } catch {
+        if (!cancelled) setDispositions([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, campaignId]);
+
   /**
    * Cursor-based paging shim. The DataGrid emits page-index deltas but the
    * endpoint (§4 row #16) only exposes prev/next cursors — so we translate:
@@ -311,7 +452,10 @@ export function Component() {
         selectedChannels.length > 0
           ? selectedChannels.map((c) => CHANNEL_TO_WIRE[c])
           : undefined,
+      queueIds: selectedQueueIds.length > 0 ? selectedQueueIds : undefined,
+      dispositions: selectedDispositions.length > 0 ? selectedDispositions : undefined,
       customerName: searchQuery || undefined,
+      sortBy,
       ...cursors,
     };
 
@@ -331,41 +475,23 @@ export function Component() {
     paginationModel.pageSize,
     searchQuery,
     selectedChannels,
+    selectedQueueIds,
+    selectedDispositions,
+    sortBy,
   ]);
 
-  const uniqueSorted = (values: string[]): string[] =>
-    Array.from(new Set(values.filter(Boolean))).sort();
-
-  const customerOptions = toMultiSelectOptions(
-    uniqueSorted(rows.map((r) => r.customer.name)),
-  );
-
   const channelOptions = toMultiSelectOptions(Object.values(InteractionChannel));
-
-  const userOptions = toMultiSelectOptions(uniqueSorted(rows.map((r) => r.user.name)));
 
   const channelInitialValue =
     selectedChannels.length > 0 ? selectedChannels.map((c) => String(c)) : undefined;
 
   const customToolbarFilters: ToolbarFilterConfig[] = [
     {
-      id: 'customer',
-      type: 'multi-select',
-      label: t('interactionsFilterCustomer'),
-      multiSelectOptions: customerOptions,
-    },
-    {
       id: 'channel',
       type: 'multi-select',
       label: t('interactionsFilterChannel'),
       multiSelectOptions: channelOptions,
       initialValue: channelInitialValue,
-    },
-    {
-      id: 'user',
-      type: 'multi-select',
-      label: t('interactionsFilterUser'),
-      multiSelectOptions: userOptions,
     },
     {
       id: 'dateAdded',
@@ -375,12 +501,38 @@ export function Component() {
       allowPastDates: true,
       allowFutureDates: true,
     },
+    {
+      id: 'queue',
+      type: 'multi-select',
+      label: t('interactionsFilterQueue'),
+      multiSelectOptions: toQueueOptions(queues),
+      initialValue:
+        selectedQueueIds.length > 0
+          ? selectedQueueIds.map((id) => String(id))
+          : undefined,
+      showSelectAll: true,
+      disabled: queues.length === 0,
+    },
+    {
+      id: 'disposition',
+      type: 'multi-select',
+      label: t('interactionsFilterDisposition'),
+      multiSelectOptions: toDispositionOptions(dispositions),
+      initialValue:
+        selectedDispositions.length > 0 ? selectedDispositions : undefined,
+      showSelectAll: true,
+      disabled: dispositions.length === 0,
+    },
   ];
 
   const consolidatedFilter: DataGridConsolidatedFilterConfig = {
     label: t('interactionsFiltersLabel'),
     iconName: 'funnel',
     filterSearchPlaceholder: t('interactionsFiltersSearchPlaceholder'),
+    groups: [
+      ['channel', 'dateAdded'],
+      ['queue', 'disposition'],
+    ],
   };
 
   // Clearing the campaign is intentional — the effect above then lands on the
@@ -460,6 +612,18 @@ export function Component() {
         ) as InteractionChannel[])
       : [];
     setSelectedChannels(pickedChannels);
+
+    const rawQueue = appliedFilters.queue;
+    const pickedQueueIds = Array.isArray(rawQueue)
+      ? rawQueue.map(Number).filter((id) => Number.isFinite(id))
+      : [];
+    setSelectedQueueIds(pickedQueueIds);
+
+    const rawDisposition = appliedFilters.disposition;
+    const pickedDispositions = Array.isArray(rawDisposition)
+      ? rawDisposition.filter((value): value is string => typeof value === 'string' && value.length > 0)
+      : [];
+    setSelectedDispositions(pickedDispositions);
   };
 
   // Title badge only renders a count once the backend surfaces a real integer.
@@ -473,7 +637,8 @@ export function Component() {
     showSearch: true,
     searchType: 'advanced',
     onAdvanceSearch: (payload: AdvancedSearchPayload) => {
-      setCommittedSearch(payload.searchValue ? payload : null);
+      commitSearch.cancel();
+      setSearchQuery(payload.searchValue);
     },
     advancedSearchConfig: {
       options: [
@@ -487,6 +652,11 @@ export function Component() {
       defaultOptionId: 'customerName',
       placeholder: t('interactionsSearchPlaceholder'),
       size: 'medium',
+      searchValue: searchInput,
+      onSearchChange: (value) => {
+        setSearchInput(value);
+        commitSearch(value.trim());
+      },
     },
   };
 
@@ -495,8 +665,6 @@ export function Component() {
       field: 'customer',
       headerName: t('interactionsColumnCustomerName'),
       width: 208,
-      sortComparator: (a: Interaction['customer'], b: Interaction['customer']) =>
-        a.name.localeCompare(b.name),
       renderCell: (params: GridRenderCellParams<Interaction>) => (
         <IdentityCell kind="customer" name={params.row.customer.name} />
       ),
@@ -505,6 +673,7 @@ export function Component() {
       field: 'channelDetail',
       headerName: t('interactionsColumnChannelDetail'),
       width: 174,
+      sortable: false,
     },
     {
       field: 'channel',
@@ -538,8 +707,6 @@ export function Component() {
       field: 'user',
       headerName: t('interactionsColumnUser'),
       width: 208,
-      sortComparator: (a: Interaction['user'], b: Interaction['user']) =>
-        a.name.localeCompare(b.name),
       renderCell: (params: GridRenderCellParams<Interaction>) => (
         <IdentityCell kind="user" name={params.row.user.name} />
       ),
@@ -548,11 +715,7 @@ export function Component() {
       field: 'scoring',
       headerName: t('interactionsColumnScoring'),
       width: 144,
-      sortComparator: (a: Interaction['scoring'], b: Interaction['scoring']) => {
-        const av = a ? a.score / a.total : -1;
-        const bv = b ? b.score / b.total : -1;
-        return av - bv;
-      },
+      sortable: false,
       renderCell: (
         params: GridRenderCellParams<Interaction, Interaction['scoring']>,
       ) => {
@@ -598,6 +761,7 @@ export function Component() {
       field: 'interactionTimeSeconds',
       headerName: t('interactionsColumnInteractionTime'),
       width: 211,
+      sortable: false,
       renderCell: (params: GridRenderCellParams<Interaction, number>) => (
         <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
       ),
@@ -606,6 +770,7 @@ export function Component() {
       field: 'holdTimeSeconds',
       headerName: t('interactionsColumnHoldTime'),
       width: 211,
+      sortable: false,
       renderCell: (params: GridRenderCellParams<Interaction, number>) => (
         <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
       ),
@@ -614,6 +779,7 @@ export function Component() {
       field: 'ivrTimeSeconds',
       headerName: t('interactionsColumnIvrTime'),
       width: 211,
+      sortable: false,
       renderCell: (params: GridRenderCellParams<Interaction, number>) => (
         <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
       ),
@@ -622,6 +788,7 @@ export function Component() {
       field: 'setupTimeSeconds',
       headerName: t('interactionsColumnSetupTime'),
       width: 211,
+      sortable: false,
       renderCell: (params: GridRenderCellParams<Interaction, number>) => (
         <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
       ),
@@ -630,6 +797,7 @@ export function Component() {
       field: 'ringingTimeSeconds',
       headerName: t('interactionsColumnRingingTime'),
       width: 211,
+      sortable: false,
       renderCell: (params: GridRenderCellParams<Interaction, number>) => (
         <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
       ),
@@ -638,11 +806,13 @@ export function Component() {
       field: 'systemDisposition',
       headerName: t('interactionsColumnSystemDisposition'),
       width: 230,
+      sortable: false,
     },
     {
       field: 'dispositionClass',
       headerName: t('interactionsColumnDispositionClass'),
       width: 230,
+      sortable: false,
     },
     {
       field: 'dispositionCode',
@@ -669,7 +839,10 @@ export function Component() {
           selectedChannels.length > 0
             ? selectedChannels.map((c) => CHANNEL_TO_WIRE[c])
             : undefined,
+        queueIds: selectedQueueIds.length > 0 ? selectedQueueIds : undefined,
+        dispositions: selectedDispositions.length > 0 ? selectedDispositions : undefined,
         customerName: searchQuery || undefined,
+        sortBy,
         // Refresh always reloads the current cursor position.
         beforeCursor: beforeCursor ?? undefined,
         afterCursor: afterCursor ?? undefined,
@@ -705,6 +878,8 @@ export function Component() {
         nestedList={nestedList}
         onRefresh={handleRefresh}
         onToolbarFiltersChange={handleToolbarFiltersChange}
+        sortModel={sortModel}
+        onSortModelChange={setSortModel}
         checkboxSelection
         disableRowSelectionOnClick
         pagination
