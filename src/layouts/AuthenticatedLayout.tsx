@@ -4,10 +4,12 @@ import TopNavBar from "./components/TopNavBar";
 import { AuthGuard } from "@/shared/components/guards/AuthGuard";
 import LeftSidebar from "./components/LeftSidebar";
 import usePingPush from "@/features/auth/hooks/usePingPush";
+import useSessionBootstrap from "@/features/auth/hooks/useSessionBootstrap";
 
 
 const AuthenticatedLayout = () => {
   usePingPush();
+  useSessionBootstrap();
 
   return (
     <AuthGuard>

@@ -1,6 +1,8 @@
 import type { Campaign, Process, TableDefinition } from "@/boilerplate/cmsApis/models";
 import type { NormalisedAxiosResponse } from "@/shared/utils/normaliseAxiosResponse";
-import { createCampaign, createProcess, getAllTableDefinitions, getCampaignList, getProcessList } from "./asyncActions";
+import type { AssignedProcess } from "@/services/apiClient/supervisorApis";
+import { clearLoginResponse } from "@/features/auth/authSlice";
+import { createCampaign, createProcess, fetchAssignedProcesses, getAllTableDefinitions, getCampaignList, getProcessList } from "./asyncActions";
 import { createSlice } from "@reduxjs/toolkit";
 import type { RootState } from "@/store";
 
@@ -19,6 +21,10 @@ interface ProcessState {
   getCampaignListError: NormalisedAxiosResponse | null;
   createCampaignLoading: boolean;
   createCampaignError: NormalisedAxiosResponse | null;
+  assignedProcesses: AssignedProcess[];
+  assignedProcessesLoading: boolean;
+  assignedProcessesError: NormalisedAxiosResponse | null;
+  assignedProcessesLoaded: boolean;
 }
 
 const initialState: ProcessState = {
@@ -36,6 +42,10 @@ const initialState: ProcessState = {
   getCampaignListError: null,
   createCampaignLoading: false,
   createCampaignError: null,
+  assignedProcesses: [],
+  assignedProcessesLoading: false,
+  assignedProcessesError: null,
+  assignedProcessesLoaded: false,
 };
 
 const processSlice = createSlice({
@@ -125,6 +135,26 @@ const processSlice = createSlice({
       .addCase(createCampaign.rejected, (state, action) => {
         state.createCampaignLoading = false;
         state.createCampaignError = action.payload ?? null;
+      })
+      .addCase(fetchAssignedProcesses.pending, (state) => {
+        state.assignedProcessesLoading = true;
+        state.assignedProcessesError = null;
+      })
+      .addCase(fetchAssignedProcesses.fulfilled, (state, action) => {
+        state.assignedProcessesLoading = false;
+        state.assignedProcessesLoaded = true;
+        state.assignedProcesses = action.payload.response?.data ?? [];
+      })
+      .addCase(fetchAssignedProcesses.rejected, (state, action) => {
+        state.assignedProcessesLoading = false;
+        state.assignedProcessesLoaded = true;
+        state.assignedProcessesError = action.payload ?? null;
+      })
+      .addCase(clearLoginResponse, (state) => {
+        state.assignedProcesses = [];
+        state.assignedProcessesLoading = false;
+        state.assignedProcessesError = null;
+        state.assignedProcessesLoaded = false;
       });
   },
 });
@@ -147,5 +177,13 @@ export const selectGetCampaignListLoading = (state: RootState) => state.process.
 export const selectGetCampaignListError = (state: RootState) => state.process.getCampaignListError;
 export const selectCreateCampaignLoading = (state: RootState) => state.process.createCampaignLoading;
 export const selectCreateCampaignError = (state: RootState) => state.process.createCampaignError;
+
+export const selectAssignedProcesses = (state: RootState) => state.process.assignedProcesses;
+export const selectAssignedProcessesLoading = (state: RootState) =>
+  state.process.assignedProcessesLoading;
+export const selectAssignedProcessesError = (state: RootState) =>
+  state.process.assignedProcessesError;
+export const selectAssignedProcessesLoaded = (state: RootState) =>
+  state.process.assignedProcessesLoaded;
 
 export default processSlice.reducer;

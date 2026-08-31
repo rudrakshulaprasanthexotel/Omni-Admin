@@ -35,6 +35,13 @@ export interface AssignedCampaign {
   contactCenterId?: number;
 }
 
+export interface AssignedProcess {
+  processId: number;
+  processName: string;
+  processType?: string;
+  contactCenterId?: number;
+}
+
 export interface UserGroup {
   groupId: number;
   groupName: string;
@@ -127,6 +134,16 @@ export const supervisorApis = {
   getAssignedCampaigns(sessionId?: string): Promise<AxiosResponse<AssignedCampaign[]>> {
     return apiClient.get<AssignedCampaign[]>(
       `${CC_REST_BASE}/campaigns/getAssigned${buildQuery({ sessionId })}`,
+    );
+  },
+
+  /**
+   * Processes assigned to the logged-in user. Loaded once after login
+   * (`GET /ameyorestapi/cc/processes/getAssigned`).
+   */
+  getAssignedProcesses(sessionId?: string): Promise<AxiosResponse<AssignedProcess[]>> {
+    return apiClient.get<AssignedProcess[]>(
+      `${CC_REST_BASE}/processes/getAssigned${buildQuery({ sessionId })}`,
     );
   },
 
