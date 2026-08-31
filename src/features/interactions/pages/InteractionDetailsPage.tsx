@@ -8,6 +8,8 @@ import {
   Icon,
   Typography,
   useTheme,
+  type AdvancedSearchPayload,
+  type DataGridConsolidatedFilterConfig,
   type DataGridProps,
   type DataGridTableHeaderProps,
   type GridColDef,
@@ -172,26 +174,21 @@ export function Component() {
   const [paginationModel, setPaginationModel] =
     useState<PaginationModel>(initialPaginationModel);
   const [selectedChannels, setSelectedChannels] = useState<InteractionChannel[]>([]);
-  const [searchText, setSearchText] = useState('');
-  const [debouncedSearchText, setDebouncedSearchText] = useState('');
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedSearchText(searchText.trim()), 300);
-    return () => window.clearTimeout(timer);
-  }, [searchText]);
+  const [committedSearch, setCommittedSearch] = useState<AdvancedSearchPayload | null>(null);
+  const searchQuery = committedSearch?.searchValue ?? '';
 
   const [prevCampaignId, setPrevCampaignId] = useState<number | null>(campaignId);
   if (prevCampaignId !== campaignId) {
     setPrevCampaignId(campaignId);
     setPaginationModel(initialPaginationModel);
-    setSearchText('');
-    setDebouncedSearchText('');
+    setCommittedSearch(null);
     setSelectedChannels([]);
     dispatch(resetInteractionsPagination());
   }
 
-  const [prevSearchText, setPrevSearchText] = useState(debouncedSearchText);
-  if (prevSearchText !== debouncedSearchText) {
-    setPrevSearchText(debouncedSearchText);
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery);
+  if (prevSearchQuery !== searchQuery) {
+    setPrevSearchQuery(searchQuery);
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
     dispatch(resetInteractionsPagination());
   }
@@ -259,7 +256,7 @@ export function Component() {
         selectedChannels.length > 0
           ? selectedChannels.map((c) => CHANNEL_TO_WIRE[c])
           : undefined,
-      customerName: debouncedSearchText || undefined,
+      customerName: searchQuery || undefined,
       ...cursors,
     };
 
@@ -277,7 +274,7 @@ export function Component() {
     processId,
     paginationModel.page,
     paginationModel.pageSize,
-    debouncedSearchText,
+    searchQuery,
     selectedChannels,
   ]);
 
@@ -344,6 +341,12 @@ export function Component() {
     },
   ];
 
+  const consolidatedFilter: DataGridConsolidatedFilterConfig = {
+    label: t('interactionsFiltersLabel'),
+    iconName: 'funnel',
+    filterSearchPlaceholder: t('interactionsFiltersSearchPlaceholder'),
+  };
+
   const handleToolbarFiltersChange = (appliedFilters: ToolbarFilterRecords): void => {
     const rawCampaign = appliedFilters.campaign;
     const pickedCampaign = Array.isArray(rawCampaign) ? rawCampaign[0] : undefined;
@@ -382,8 +385,23 @@ export function Component() {
         ? `${t('interactionsPageTitle')} (${titleCount})`
         : t('interactionsPageTitle'),
     showSearch: true,
-    searchType: 'basic',
-    onBasicSearch: setSearchText,
+    searchType: 'advanced',
+    onAdvanceSearch: (payload: AdvancedSearchPayload) => {
+      setCommittedSearch(payload.searchValue ? payload : null);
+    },
+    advancedSearchConfig: {
+      options: [
+        {
+          id: 'customerName',
+          label: t('interactionsColumnCustomerName'),
+          value: 'customerName',
+          placeholder: t('interactionsSearchPlaceholder'),
+        },
+      ],
+      defaultOptionId: 'customerName',
+      placeholder: t('interactionsSearchPlaceholder'),
+      size: 'medium',
+    },
   };
 
   const columns: GridColDef<Interaction>[] = [
@@ -565,7 +583,7 @@ export function Component() {
           selectedChannels.length > 0
             ? selectedChannels.map((c) => CHANNEL_TO_WIRE[c])
             : undefined,
-        customerName: debouncedSearchText || undefined,
+        customerName: searchQuery || undefined,
         // Refresh always reloads the current cursor position.
         beforeCursor: beforeCursor ?? undefined,
         afterCursor: afterCursor ?? undefined,
@@ -597,7 +615,7 @@ export function Component() {
         loading={loading}
         tableHeader={tableHeader}
         customToolbarFilters={customToolbarFilters}
-        showAppliedFilters
+        consolidatedFilter={consolidatedFilter}
         onRefresh={handleRefresh}
         onToolbarFiltersChange={handleToolbarFiltersChange}
         checkboxSelection
