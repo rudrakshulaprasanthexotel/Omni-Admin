@@ -1,4 +1,4 @@
-import { useEffect, useState, type SyntheticEvent } from 'react';
+import { useEffect, useMemo, useState, type SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -13,10 +13,11 @@ import {
 import { selectContactCenterId } from '@/features/auth/authSlice';
 import { downloadBlob } from '@/shared/utils/downloadBlob';
 import { useAppSelector } from '@/store/hooks';
-import { selectInteractions } from '../interactionsSlice';
+import { selectInteractionRows, selectQaDenominatorByCampaignId } from '../interactionsSlice';
 import { InteractionChannel } from '../types';
 import { isPresent } from '../utils/formatInteraction';
 import { mapChatTranscript, type ChatTranscriptMessage } from '../utils/mapChatTranscript';
+import { mapInteractionRows } from '../utils/mapInteraction';
 import InteractionChatTranscript from './InteractionChatTranscript';
 import InteractionOverview from './InteractionOverview';
 import InteractionTimeline from './InteractionTimeline';
@@ -30,9 +31,16 @@ interface InteractionPreviewPanelProps {
 const InteractionPreviewPanel = ({ interactionId }: InteractionPreviewPanelProps) => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const interactions = useAppSelector(selectInteractions);
+  const interactionRows = useAppSelector(selectInteractionRows);
+  const qaDenominatorByCampaignId = useAppSelector(selectQaDenominatorByCampaignId);
   const sessionCcId = useAppSelector(selectContactCenterId);
-  const interaction = interactions.find((row) => row.id === interactionId);
+  const interaction = useMemo(
+    () =>
+      mapInteractionRows(interactionRows, qaDenominatorByCampaignId).find(
+        (row) => row.id === interactionId,
+      ),
+    [interactionRows, qaDenominatorByCampaignId, interactionId],
+  );
   const [tab, setTab] = useState<PreviewTab>(
     interaction?.channel === InteractionChannel.CHAT ? 'transcript' : 'overview',
   );

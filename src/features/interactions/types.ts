@@ -75,8 +75,8 @@ export interface Interaction {
   systemDisposition: string;
   dispositionClass: string;
   dispositionCode: string;
-  /** Display-only unique interaction id shown in the last column. Falls back to `id`. */
-  uniqueId?: string;
+  /** Unique interaction id, also used as the grid row id. Falls back to `id`. */
+  uniqueId: string;
   contactCenterId?: number;
   processId?: number;
   campaignId?: number;

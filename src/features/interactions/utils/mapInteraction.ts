@@ -255,6 +255,22 @@ export interface MapInteractionContext {
   qaScoreByInteractionId?: Record<string, number | null>;
 }
 
+export function mapInteractionRows(
+  rows: InteractionOutPutBean[],
+  qaDenominatorByCampaignId: Record<number, number>,
+): Interaction[] {
+  return rows.map((row) => {
+    const campaignId = pickNumber(
+      row as Loose<InteractionOutPutBean>,
+      'lastCampaignId',
+      'last_campaign_id',
+    );
+    const qaDenominator =
+      campaignId != null ? qaDenominatorByCampaignId[campaignId] ?? null : null;
+    return mapInteractionOutPutBeanToInteraction(row, { qaDenominator });
+  });
+}
+
 export function mapInteractionOutPutBeanToInteraction(
   raw: InteractionOutPutBean,
   ctx: MapInteractionContext = {},

@@ -1,4 +1,4 @@
-import { createSelector, createSlice } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import type {
   CustomCursorMetadata,
   InteractionOutPutBean,
@@ -12,8 +12,6 @@ import {
   fetchInteractions,
 } from './asyncActions';
 import type { AssignedCampaign } from '@/services/apiClient/supervisorApis';
-import { mapInteractionOutPutBeanToInteraction } from './utils/mapInteraction';
-import type { Interaction } from './types';
 
 interface InteractionsState {
   rows: InteractionOutPutBean[];
@@ -210,19 +208,5 @@ export const selectInteractionsCampaignsLoading = (state: RootState) =>
   state.interactions.campaignsLoading;
 export const selectQaDenominatorByCampaignId = (state: RootState) =>
   state.interactions.qaDenominatorByCampaignId;
-
-export const selectInteractions = createSelector(
-  [selectInteractionRows, selectQaDenominatorByCampaignId],
-  (rows, qaDenominatorByCampaignId): Interaction[] =>
-    rows.map((row) => {
-      const raw = row as InteractionOutPutBean & Record<string, unknown>;
-      const campaignId =
-        (raw.lastCampaignId as number | undefined) ??
-        (raw['last_campaign_id'] as number | undefined);
-      const qaDenominator =
-        typeof campaignId === 'number' ? qaDenominatorByCampaignId[campaignId] ?? null : null;
-      return mapInteractionOutPutBeanToInteraction(row, { qaDenominator });
-    }),
-);
 
 export default interactionsSlice.reducer;
