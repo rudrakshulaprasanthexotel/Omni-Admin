@@ -803,12 +803,6 @@ export function Component() {
       ),
     },
     {
-      field: 'systemDisposition',
-      headerName: t('interactionsColumnSystemDisposition'),
-      width: 230,
-      sortable: false,
-    },
-    {
       field: 'dispositionClass',
       headerName: t('interactionsColumnDispositionClass'),
       width: 230,
