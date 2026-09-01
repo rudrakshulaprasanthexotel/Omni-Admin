@@ -209,13 +209,22 @@ export function Component() {
   const [searchParams, setSearchParams] = useSearchParams();
   const theme = useTheme();
 
-  const channelColor: Record<InteractionChannel, string> = {
-    [InteractionChannel.CALL]: theme.palette.custom.channelCall,
-    [InteractionChannel.WHATSAPP]: theme.palette.custom.channelWhatsApp,
-    [InteractionChannel.SMS]: theme.palette.custom.channelSms,
-    [InteractionChannel.MAIL]: theme.palette.custom.channelMail,
-    [InteractionChannel.CHAT]: theme.palette.custom.channelChat,
-  };
+  const channelColor: Record<InteractionChannel, string> = useMemo(
+    () => ({
+      [InteractionChannel.CALL]: theme.palette.custom.channelCall,
+      [InteractionChannel.WHATSAPP]: theme.palette.custom.channelWhatsApp,
+      [InteractionChannel.SMS]: theme.palette.custom.channelSms,
+      [InteractionChannel.MAIL]: theme.palette.custom.channelMail,
+      [InteractionChannel.CHAT]: theme.palette.custom.channelChat,
+    }),
+    [
+      theme.palette.custom.channelCall,
+      theme.palette.custom.channelWhatsApp,
+      theme.palette.custom.channelSms,
+      theme.palette.custom.channelMail,
+      theme.palette.custom.channelChat,
+    ],
+  );
 
   const campaignIdParam = searchParams.get('campaignId');
   const parsedCampaignId = campaignIdParam ? Number(campaignIdParam) : Number.NaN;
@@ -660,166 +669,169 @@ export function Component() {
     },
   };
 
-  const columns: GridColDef<Interaction>[] = [
-    {
-      field: 'customer',
-      headerName: t('interactionsColumnCustomerName'),
-      width: 208,
-      renderCell: (params: GridRenderCellParams<Interaction>) => (
-        <IdentityCell kind="customer" name={params.row.customer.name} />
-      ),
-    },
-    {
-      field: 'channelDetail',
-      headerName: t('interactionsColumnChannelDetail'),
-      width: 174,
-      sortable: false,
-    },
-    {
-      field: 'channel',
-      headerName: t('interactionsColumnChannel'),
-      width: 152,
-      renderCell: (params: GridRenderCellParams<Interaction, InteractionChannel>) => {
-        const channel = params.value;
-        if (!channel) return null;
-        return (
-          <IconTextCell
-            iconName={CHANNEL_ICON[channel]}
-            text={channel}
-            iconColor={channelColor[channel]}
-          />
-        );
+  const columns: GridColDef<Interaction>[] = useMemo(
+    () => [
+      {
+        field: 'customer',
+        headerName: t('interactionsColumnCustomerName'),
+        width: 208,
+        renderCell: (params: GridRenderCellParams<Interaction>) => (
+          <IdentityCell kind="customer" name={params.row.customer.name} />
+        ),
       },
-    },
-    {
-      field: 'channelType',
-      headerName: t('interactionsColumnChannelType'),
-      width: 214,
-      renderCell: (
-        params: GridRenderCellParams<Interaction, InteractionChannelType>,
-      ) => {
-        const type = params.value;
-        if (!type) return null;
-        return <IconTextCell iconName={CHANNEL_TYPE_ICON[type]} text={type} />;
+      {
+        field: 'channelDetail',
+        headerName: t('interactionsColumnChannelDetail'),
+        width: 174,
+        sortable: false,
       },
-    },
-    {
-      field: 'user',
-      headerName: t('interactionsColumnUser'),
-      width: 208,
-      renderCell: (params: GridRenderCellParams<Interaction>) => (
-        <IdentityCell kind="user" name={params.row.user.name} />
-      ),
-    },
-    {
-      field: 'scoring',
-      headerName: t('interactionsColumnScoring'),
-      width: 144,
-      sortable: false,
-      renderCell: (
-        params: GridRenderCellParams<Interaction, Interaction['scoring']>,
-      ) => {
-        const scoring = params.value;
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-            {scoring ? (
-              <Chip
-                label={`${scoring.score}/${scoring.total}`}
-                size="small"
-                variant="tonal"
-                color={scoreColor(scoring.score, scoring.total)}
-              />
-            ) : (
-              <Typography variant="body2" color="text.disabled">
-                —
-              </Typography>
-            )}
-          </Box>
-        );
+      {
+        field: 'channel',
+        headerName: t('interactionsColumnChannel'),
+        width: 152,
+        renderCell: (params: GridRenderCellParams<Interaction, InteractionChannel>) => {
+          const channel = params.value;
+          if (!channel) return null;
+          return (
+            <IconTextCell
+              iconName={CHANNEL_ICON[channel]}
+              text={channel}
+              iconColor={channelColor[channel]}
+            />
+          );
+        },
       },
-    },
-    {
-      field: 'campaign',
-      headerName: t('interactionsColumnCampaign'),
-      width: 158,
-    },
-    {
-      field: 'queue',
-      headerName: t('interactionsColumnQueue'),
-      width: 158,
-    },
-    {
-      field: 'dateAdded',
-      headerName: t('interactionsColumnDateAdded'),
-      width: 211,
-      renderCell: (params: GridRenderCellParams<Interaction, string>) =>
-        params.value ? (
-          <IconTextCell iconName="calendar-blank" text={formatShortDate(params.value)} />
-        ) : null,
-    },
-    {
-      field: 'interactionTimeSeconds',
-      headerName: t('interactionsColumnInteractionTime'),
-      width: 211,
-      sortable: false,
-      renderCell: (params: GridRenderCellParams<Interaction, number>) => (
-        <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
-      ),
-    },
-    {
-      field: 'holdTimeSeconds',
-      headerName: t('interactionsColumnHoldTime'),
-      width: 211,
-      sortable: false,
-      renderCell: (params: GridRenderCellParams<Interaction, number>) => (
-        <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
-      ),
-    },
-    {
-      field: 'ivrTimeSeconds',
-      headerName: t('interactionsColumnIvrTime'),
-      width: 211,
-      sortable: false,
-      renderCell: (params: GridRenderCellParams<Interaction, number>) => (
-        <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
-      ),
-    },
-    {
-      field: 'setupTimeSeconds',
-      headerName: t('interactionsColumnSetupTime'),
-      width: 211,
-      sortable: false,
-      renderCell: (params: GridRenderCellParams<Interaction, number>) => (
-        <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
-      ),
-    },
-    {
-      field: 'ringingTimeSeconds',
-      headerName: t('interactionsColumnRingingTime'),
-      width: 211,
-      sortable: false,
-      renderCell: (params: GridRenderCellParams<Interaction, number>) => (
-        <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
-      ),
-    },
-    {
-      field: 'dispositionClass',
-      headerName: t('interactionsColumnDispositionClass'),
-      width: 230,
-      sortable: false,
-    },
-    {
-      field: 'dispositionCode',
-      headerName: t('interactionsColumnDispositionCode'),
-      width: 230,
-    },
-    {
-      field: 'uniqueId',
-      headerName: t('interactionsColumnUniqueId'),
-      width: 237,
-      valueGetter: (_value, row: Interaction) => row.uniqueId ?? row.id,
-    },
-  ];
+      {
+        field: 'channelType',
+        headerName: t('interactionsColumnChannelType'),
+        width: 214,
+        renderCell: (
+          params: GridRenderCellParams<Interaction, InteractionChannelType>,
+        ) => {
+          const type = params.value;
+          if (!type) return null;
+          return <IconTextCell iconName={CHANNEL_TYPE_ICON[type]} text={type} />;
+        },
+      },
+      {
+        field: 'user',
+        headerName: t('interactionsColumnUser'),
+        width: 208,
+        renderCell: (params: GridRenderCellParams<Interaction>) => (
+          <IdentityCell kind="user" name={params.row.user.name} />
+        ),
+      },
+      {
+        field: 'scoring',
+        headerName: t('interactionsColumnScoring'),
+        width: 144,
+        sortable: false,
+        renderCell: (
+          params: GridRenderCellParams<Interaction, Interaction['scoring']>,
+        ) => {
+          const scoring = params.value;
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+              {scoring ? (
+                <Chip
+                  label={`${scoring.score}/${scoring.total}`}
+                  size="small"
+                  variant="tonal"
+                  color={scoreColor(scoring.score, scoring.total)}
+                />
+              ) : (
+                <Typography variant="body2" color="text.disabled">
+                  —
+                </Typography>
+              )}
+            </Box>
+          );
+        },
+      },
+      {
+        field: 'campaign',
+        headerName: t('interactionsColumnCampaign'),
+        width: 158,
+      },
+      {
+        field: 'queue',
+        headerName: t('interactionsColumnQueue'),
+        width: 158,
+      },
+      {
+        field: 'dateAdded',
+        headerName: t('interactionsColumnDateAdded'),
+        width: 211,
+        renderCell: (params: GridRenderCellParams<Interaction, string>) =>
+          params.value ? (
+            <IconTextCell iconName="calendar-blank" text={formatShortDate(params.value)} />
+          ) : null,
+      },
+      {
+        field: 'interactionTimeSeconds',
+        headerName: t('interactionsColumnInteractionTime'),
+        width: 211,
+        sortable: false,
+        renderCell: (params: GridRenderCellParams<Interaction, number>) => (
+          <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
+        ),
+      },
+      {
+        field: 'holdTimeSeconds',
+        headerName: t('interactionsColumnHoldTime'),
+        width: 211,
+        sortable: false,
+        renderCell: (params: GridRenderCellParams<Interaction, number>) => (
+          <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
+        ),
+      },
+      {
+        field: 'ivrTimeSeconds',
+        headerName: t('interactionsColumnIvrTime'),
+        width: 211,
+        sortable: false,
+        renderCell: (params: GridRenderCellParams<Interaction, number>) => (
+          <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
+        ),
+      },
+      {
+        field: 'setupTimeSeconds',
+        headerName: t('interactionsColumnSetupTime'),
+        width: 211,
+        sortable: false,
+        renderCell: (params: GridRenderCellParams<Interaction, number>) => (
+          <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
+        ),
+      },
+      {
+        field: 'ringingTimeSeconds',
+        headerName: t('interactionsColumnRingingTime'),
+        width: 211,
+        sortable: false,
+        renderCell: (params: GridRenderCellParams<Interaction, number>) => (
+          <IconTextCell iconName="timer" text={formatDuration(params.value ?? 0)} />
+        ),
+      },
+      {
+        field: 'dispositionClass',
+        headerName: t('interactionsColumnDispositionClass'),
+        width: 230,
+        sortable: false,
+      },
+      {
+        field: 'dispositionCode',
+        headerName: t('interactionsColumnDispositionCode'),
+        width: 230,
+      },
+      {
+        field: 'uniqueId',
+        headerName: t('interactionsColumnUniqueId'),
+        width: 237,
+        valueGetter: (_value, row: Interaction) => row.uniqueId ?? row.id,
+      },
+    ],
+    [t, channelColor],
+  );
 
   const handleRefresh = () => {
     if (campaignId === null || resolvedCcId === undefined || processId === undefined) return;
@@ -860,7 +872,16 @@ export function Component() {
       : t('interactionsEmptyState');
 
   return (
-    <Box sx={{ flex: 1, height: '100%' }}>
+    <Box
+      sx={{
+        height: '100%',
+        minHeight: 0,
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
       <DataGrid
         key={campaignId ?? 'no-campaign'}
         rows={rows}
@@ -876,6 +897,7 @@ export function Component() {
         onSortModelChange={setSortModel}
         checkboxSelection
         disableRowSelectionOnClick
+        disableVirtualization
         pagination
         paginationMode="server"
         paginationModel={paginationModel}
@@ -883,6 +905,7 @@ export function Component() {
         rowCount={totalRows}
         pageSizeOptions={PAGE_SIZE_OPTIONS}
         emptyStateMessage={emptyStateMessage}
+        sx={{ minHeight: 0, minWidth: 0 }}
       />
     </Box>
   );
