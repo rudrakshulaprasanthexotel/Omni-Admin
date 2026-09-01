@@ -61,22 +61,10 @@ import {
   type Interaction,
 } from '../types';
 import IdentityCell from '../components/IdentityCell';
+import InteractionRowActions from '../components/InteractionRowActions';
 import { SelectorAvatar, SelectorListItem } from '../components/SelectorEntity';
-
-const CHANNEL_ICON: Record<InteractionChannel, IconName> = {
-  [InteractionChannel.CALL]: 'phone',
-  [InteractionChannel.WHATSAPP]: 'whatsapp-logo',
-  [InteractionChannel.SMS]: 'chat-text',
-  [InteractionChannel.MAIL]: 'envelope-simple',
-  [InteractionChannel.CHAT]: 'chats-circle',
-};
-
-const CHANNEL_TYPE_ICON: Record<InteractionChannelType, IconName> = {
-  [InteractionChannelType.INBOUND]: 'arrow-down-left',
-  [InteractionChannelType.OUTBOUND_MANUAL]: 'arrow-up-right',
-  [InteractionChannelType.OUTBOUND_MULTI_DIAL]: 'arrow-up-right',
-  [InteractionChannelType.OUTBOUND_AUTO_DIAL]: 'arrow-up-right',
-};
+import { CHANNEL_ICON, CHANNEL_TYPE_ICON } from '../constants';
+import { formatDuration, formatShortDate } from '../utils/formatInteraction';
 
 /**
  * Channel filter chips → `channel_type` query param. The interactions
@@ -128,27 +116,6 @@ const DEFAULT_PAGE_SIZE = 50;
 type PaginationModel = { page: number; pageSize: number };
 
 const initialPaginationModel: PaginationModel = { page: 0, pageSize: DEFAULT_PAGE_SIZE };
-
-const pad = (n: number) => String(n).padStart(2, '0');
-
-const formatDuration = (totalSeconds: number) => {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-};
-
-const formatShortDate = (iso: string) => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  const day = date.toLocaleString(undefined, { month: 'short', day: '2-digit' });
-  const time = date.toLocaleString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-  return `${day}, ${time}`;
-};
 
 const scoreColor = (score: number, total: number): 'success' | 'warning' | 'error' => {
   const pct = (score / total) * 100;
@@ -825,6 +792,16 @@ export function Component() {
         width: 237,
         valueGetter: (_value, row: Interaction) => row.uniqueId ?? row.id,
       },
+      {
+        field: 'actions',
+        headerName: '',
+        width: 64,
+        sortable: false,
+        disableColumnMenu: true,
+        renderCell: (params: GridRenderCellParams<Interaction>) => (
+          <InteractionRowActions interaction={params.row} />
+        ),
+      },
     ],
     [t, channelColor],
   );
@@ -891,6 +868,7 @@ export function Component() {
         checkboxSelection
         disableRowSelectionOnClick
         disableVirtualization
+        pinnedColumns={{ right: ['actions'] }}
         pagination
         paginationMode="server"
         paginationModel={paginationModel}

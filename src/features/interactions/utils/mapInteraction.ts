@@ -8,6 +8,7 @@ import {
   type Interaction,
   type InteractionState,
 } from '../types';
+import { humanizeKey } from './formatInteraction';
 
 /**
  * The generated boilerplate declares `InteractionOutPutBean` / `ChannelDataBean`
@@ -30,6 +31,34 @@ function pickField<TValue>(
     }
   }
   return undefined;
+}
+
+function pickString(bean: Record<string, unknown>, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = bean[key];
+    if (value === undefined || value === null || value === '') continue;
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+  }
+  return undefined;
+}
+
+function asObject(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      return {};
+    }
+  }
+  return {};
 }
 
 /**
@@ -86,6 +115,108 @@ const resolveInteractionState = (status?: string): InteractionState | undefined 
   return undefined;
 };
 
+const CONSUMED_KEYS = new Set([
+  'id',
+  'title',
+  'customerId',
+  'customer_id',
+  'customerName',
+  'customer_name',
+  'lastAssignedUserId',
+  'last_assigned_user_id',
+  'lastAssignedUserName',
+  'last_assigned_user_name',
+  'lastCampaignName',
+  'last_campaign_name',
+  'lastQueueName',
+  'last_queue_name',
+  'lastDisposition',
+  'last_disposition',
+  'channelName',
+  'channel_name',
+  'subChannel',
+  'sub_channel',
+  'direction',
+  'dateAdded',
+  'date_added',
+  'dateModified',
+  'date_modified',
+  'dateDisposed',
+  'date_disposed',
+  'interactionRelationId',
+  'interaction_relation_id',
+  'status',
+  'firstAssignedDate',
+  'first_assigned_date',
+  'assignedDate',
+  'assigned_date',
+  'channelData',
+  'channel_data',
+  'additionalInfo',
+  'additional_info',
+  'customerContact',
+  'customer_contact',
+  'mediaId',
+  'media_id',
+  'duration',
+  'lastDid',
+  'last_did',
+  'did',
+  'voiceLogUrl',
+  'voice_log_url',
+  'chatTranscriptUrl',
+  'chat_transcript_url',
+  'case_id',
+  'caseId',
+  'caseID',
+  'caseid',
+  'last_disposition_class',
+  'lastDispositionClass',
+  'last_disposition_name',
+  'lastDispositionName',
+  'interactionMediaId',
+  'interaction_media_id',
+]);
+
+function formatPresentValue(value: unknown): string | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    const text = String(value).trim();
+    return text !== '' && text !== '—' ? text : undefined;
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return undefined;
+    if (value.every((item) => typeof item === 'string' || typeof item === 'number')) {
+      return value.join(', ');
+    }
+    return JSON.stringify(value);
+  }
+  if (typeof value === 'object') {
+    const keys = Object.keys(value);
+    return keys.length > 0 ? JSON.stringify(value) : undefined;
+  }
+  return undefined;
+}
+
+function collectExtraFields(
+  ...sources: Array<Record<string, unknown>>
+): Array<{ key: string; label: string; value: string }> {
+  const extras: Array<{ key: string; label: string; value: string }> = [];
+  const seen = new Set<string>();
+
+  for (const source of sources) {
+    for (const [key, raw] of Object.entries(source)) {
+      if (CONSUMED_KEYS.has(key) || seen.has(key)) continue;
+      const value = formatPresentValue(raw);
+      if (value == null) continue;
+      seen.add(key);
+      extras.push({ key, label: humanizeKey(key), value });
+    }
+  }
+
+  return extras;
+}
+
 const durationToSeconds = (duration: unknown): number => {
   if (typeof duration === 'number' && Number.isFinite(duration)) {
     return Math.max(0, Math.trunc(duration));
@@ -113,48 +244,56 @@ export function mapInteractionOutPutBeanToInteraction(
   ctx: MapInteractionContext = {},
 ): Interaction {
   const bean = raw as Loose<InteractionOutPutBean>;
-  const channelDataRaw = pickField<ChannelDataBean | Record<string, unknown>>(
-    bean,
-    'channelData',
-    'channel_data',
+  const channelData = asObject(
+    pickField<ChannelDataBean | Record<string, unknown> | string>(
+      bean,
+      'channelData',
+      'channel_data',
+    ),
+  ) as Loose<ChannelDataBean>;
+  const additionalInfo = asObject(
+    pickField<Record<string, unknown> | string>(bean, 'additionalInfo', 'additional_info'),
   );
-  const channelData = (channelDataRaw ?? {}) as Loose<ChannelDataBean>;
-  const additionalInfo = (pickField<Record<string, unknown>>(
-    bean,
-    'additionalInfo',
-    'additional_info',
-  ) ?? {}) as Record<string, unknown>;
 
-  const id = pickField<string>(bean, 'id') ?? '';
-  const customerName = pickField<string>(bean, 'customerName', 'customer_name') ?? '—';
+  const id = pickString(bean, 'id') ?? '';
+  const customerName = pickString(bean, 'customerName', 'customer_name') ?? '—';
   const userName =
-    pickField<string>(bean, 'lastAssignedUserName', 'last_assigned_user_name') ?? '—';
-  const campaignName =
-    pickField<string>(bean, 'lastCampaignName', 'last_campaign_name') ?? '';
-  const queueName = pickField<string>(bean, 'lastQueueName', 'last_queue_name') ?? '';
-  const channelName = pickField<string>(bean, 'channelName', 'channel_name');
+    pickString(bean, 'lastAssignedUserName', 'last_assigned_user_name') ?? '—';
+  const campaignName = pickString(bean, 'lastCampaignName', 'last_campaign_name') ?? '';
+  const queueName = pickString(bean, 'lastQueueName', 'last_queue_name') ?? '';
+  const channelName = pickString(bean, 'channelName', 'channel_name');
   const direction =
-    pickField<string>(bean, 'direction') ??
-    pickField<string>(bean, 'subChannel', 'sub_channel');
-  const dateAdded = pickField<string>(bean, 'dateAdded', 'date_added') ?? '';
-  const dispositionCode =
-    pickField<string>(bean, 'lastDisposition', 'last_disposition') ?? '';
-  const dispositionClass =
-    pickField<string>(additionalInfo, 'last_disposition_class', 'lastDispositionClass') ??
+    pickString(bean, 'direction') ?? pickString(bean, 'subChannel', 'sub_channel');
+  const dateAdded = pickString(bean, 'dateAdded', 'date_added') ?? '';
+  const startDate =
+    pickString(bean, 'firstAssignedDate', 'first_assigned_date', 'assignedDate', 'assigned_date') ??
+    dateAdded;
+  const endDate =
+    pickString(bean, 'dateDisposed', 'date_disposed', 'dateModified', 'date_modified') ?? '';
+  const did =
+    pickString(channelData, 'lastDid', 'last_did', 'did') ??
+    pickString(additionalInfo, 'last_did', 'lastDid', 'did') ??
     '';
+  const caseId =
+    pickString(additionalInfo, 'case_id', 'caseId', 'caseID', 'caseid') ?? '';
+  const dispositionCode =
+    pickString(bean, 'lastDisposition', 'last_disposition') ?? '';
+  const dispositionClass =
+    pickString(additionalInfo, 'last_disposition_class', 'lastDispositionClass') ?? '';
   const systemDisposition =
-    pickField<string>(additionalInfo, 'last_disposition_name', 'lastDispositionName') ??
+    pickString(additionalInfo, 'last_disposition_name', 'lastDispositionName') ??
     dispositionCode;
   const uniqueId =
-    pickField<string>(bean, 'interactionRelationId', 'interaction_relation_id') ?? id;
-  const status = pickField<string>(bean, 'status');
+    pickString(bean, 'interactionRelationId', 'interaction_relation_id') ?? id;
+  const status = pickString(bean, 'status');
 
   const customerContact =
-    pickField<string>(channelData, 'customerContact', 'customer_contact') ??
-    pickField<string>(channelData, 'mediaId', 'media_id') ??
+    pickString(channelData, 'customerContact', 'customer_contact') ??
+    pickString(channelData, 'mediaId', 'media_id') ??
+    pickString(bean, 'interactionMediaId', 'interaction_media_id') ??
     '';
-  const voiceLogUrl = pickField<string>(channelData, 'voiceLogUrl', 'voice_log_url');
-  const chatTranscriptUrl = pickField<string>(
+  const voiceLogUrl = pickString(channelData, 'voiceLogUrl', 'voice_log_url');
+  const chatTranscriptUrl = pickString(
     channelData,
     'chatTranscriptUrl',
     'chat_transcript_url',
@@ -181,6 +320,10 @@ export function mapInteractionOutPutBeanToInteraction(
     campaign: campaignName,
     queue: queueName,
     dateAdded,
+    did,
+    caseId,
+    startDate,
+    endDate,
     interactionTimeSeconds: interactionSeconds,
     // Voice per-row timers not yet exposed by the endpoint — see §4 row #16
     // delta ("voice-specific per-row timers on channel_data").
@@ -195,5 +338,6 @@ export function mapInteractionOutPutBeanToInteraction(
     voiceLogUrl,
     chatTranscriptUrl,
     interactionState: resolveInteractionState(status),
+    extraFields: collectExtraFields(bean, channelData, additionalInfo),
   };
 }

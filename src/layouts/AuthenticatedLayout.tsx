@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import TopNavBar from "./components/TopNavBar";
 import { AuthGuard } from "@/shared/components/guards/AuthGuard";
 import LeftSidebar from "./components/LeftSidebar";
+import RightPanel from "./components/RightPanel";
 import usePingPush from "@/features/auth/hooks/usePingPush";
 import useSessionBootstrap from "@/features/auth/hooks/useSessionBootstrap";
 
@@ -24,6 +25,7 @@ const AuthenticatedLayout = () => {
               <Outlet />
             </Box>
           </Box>
+          <RightPanel />
         </Box>
       </Box>
     </AuthGuard>

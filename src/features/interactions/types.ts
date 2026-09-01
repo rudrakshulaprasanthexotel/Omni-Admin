@@ -48,6 +48,14 @@ export interface Interaction {
   queue: string;
   /** ISO 8601 timestamp for the "Date Added" column. */
   dateAdded: string;
+  /** Voice DID from `channel_data.last_did`. */
+  did?: string;
+  /** Optional CRM case id when present on `additional_info`. */
+  caseId?: string;
+  /** Session start — `date_added` / `first_assigned_date`. */
+  startDate?: string;
+  /** Session end — `date_disposed` / `date_modified`. */
+  endDate?: string;
   /**
    * Aggregate interaction duration in seconds (voice + digital). Sourced from
    * `channel_data.duration` on the cross-channel bean.
@@ -74,4 +82,6 @@ export interface Interaction {
   voiceLogUrl?: string;
   chatTranscriptUrl?: string;
   interactionState?: InteractionState;
+  /** Remaining present scalars from the row / channel_data / additional_info. */
+  extraFields: Array<{ key: string; label: string; value: string }>;
 }

@@ -55,7 +55,7 @@ export interface FetchInteractionsResult {
 const DEFAULT_PAGE_SIZE = 50;
 const DEFAULT_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 const DEFAULT_SORT_BY = 'date_added:desc';
-const DEFAULT_FIELDS: string[] = ['channel_data'];
+const DEFAULT_FIELDS: string[] = ['channel_data', 'additional_info'];
 
 /**
  * The endpoint expects `date_range=gte:<fromEpochSec>;lte:<toEpochSec>` — see
