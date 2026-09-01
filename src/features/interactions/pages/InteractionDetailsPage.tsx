@@ -897,7 +897,7 @@ export function Component() {
       {
         field: 'actions',
         headerName: '',
-        width: 64,
+        width: 104,
         sortable: false,
         disableColumnMenu: true,
         renderCell: (params: GridRenderCellParams<Interaction>) => (
