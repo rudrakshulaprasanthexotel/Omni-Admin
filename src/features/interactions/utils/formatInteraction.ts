@@ -19,6 +19,32 @@ export const formatShortDate = (iso: string) => {
   return `${day}, ${time}`;
 };
 
+/** Chat-bubble stamps match the Figma transcript: `10:30`. */
+export const formatMessageTime = (value: string) => {
+  const trimmed = value.trim();
+  if (trimmed === '') return '';
+
+  const clock = trimmed.match(/^(\d{1,2}:\d{2})(?::\d{2})?$/);
+  if (clock) return clock[1];
+
+  const asNumber = Number(trimmed);
+  if (Number.isFinite(asNumber) && /^\d+(\.\d+)?$/.test(trimmed)) {
+    const ms = asNumber < 1e12 ? asNumber * 1000 : asNumber;
+    return formatClock(new Date(ms));
+  }
+
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) return formatClock(parsed);
+  return trimmed;
+};
+
+const formatClock = (date: Date) =>
+  date.toLocaleString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
 /** Timeline stamps match the Interaction Detail spec: `Feb 10, 13:07`. */
 export const formatTimelineDate = (iso: string) => {
   const date = new Date(iso);

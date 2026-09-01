@@ -16,6 +16,8 @@ import { useAppSelector } from '@/store/hooks';
 import { selectInteractions } from '../interactionsSlice';
 import { InteractionChannel } from '../types';
 import { isPresent } from '../utils/formatInteraction';
+import { mapChatTranscript, type ChatTranscriptMessage } from '../utils/mapChatTranscript';
+import InteractionChatTranscript from './InteractionChatTranscript';
 import InteractionOverview from './InteractionOverview';
 import InteractionTimeline from './InteractionTimeline';
 
@@ -28,22 +30,33 @@ interface InteractionPreviewPanelProps {
 const InteractionPreviewPanel = ({ interactionId }: InteractionPreviewPanelProps) => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const [tab, setTab] = useState<PreviewTab>('overview');
+  const interactions = useAppSelector(selectInteractions);
+  const sessionCcId = useAppSelector(selectContactCenterId);
+  const interaction = interactions.find((row) => row.id === interactionId);
+  const [tab, setTab] = useState<PreviewTab>(
+    interaction?.channel === InteractionChannel.CHAT ? 'transcript' : 'overview',
+  );
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioFailed, setAudioFailed] = useState(false);
   const [audioRetry, setAudioRetry] = useState(0);
-  const interactions = useAppSelector(selectInteractions);
-  const sessionCcId = useAppSelector(selectContactCenterId);
-  const interaction = interactions.find((row) => row.id === interactionId);
+  const [chatMessages, setChatMessages] = useState<ChatTranscriptMessage[]>([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatFailed, setChatFailed] = useState(false);
+  const [chatRetry, setChatRetry] = useState(0);
   const processIdFromUrl = Number(searchParams.get('processId'));
   const ccId = interaction?.contactCenterId ?? sessionCcId;
   const processId =
     interaction?.processId ??
     (Number.isFinite(processIdFromUrl) ? processIdFromUrl : undefined);
   const voiceLogUrl = interaction?.voiceLogUrl;
+  const chatTranscriptUrl = interaction?.chatTranscriptUrl;
+  const customerName = interaction?.customer.name;
+  const userName = interaction?.user.name;
+  const dataEngineBasePath = import.meta.env.VITE_DATA_ENGINE_API_BASE_PATH;
   const showAudioPlayer =
     interaction?.channel === InteractionChannel.CALL && isPresent(voiceLogUrl);
+  const showChatTranscript = isPresent(chatTranscriptUrl);
 
   useEffect(() => {
     if (!showAudioPlayer || !voiceLogUrl) {
@@ -61,7 +74,7 @@ const InteractionPreviewPanel = ({ interactionId }: InteractionPreviewPanelProps
       setAudioLoading(true);
       setAudioFailed(false);
       try {
-        const blob = await downloadBlob(import.meta.env.VITE_DATA_ENGINE_API_BASE_PATH +voiceLogUrl);
+        const blob = await downloadBlob(dataEngineBasePath + voiceLogUrl);
         if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
         setAudioSrc(objectUrl);
@@ -84,7 +97,52 @@ const InteractionPreviewPanel = ({ interactionId }: InteractionPreviewPanelProps
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [showAudioPlayer, voiceLogUrl, audioRetry]);
+  }, [showAudioPlayer, voiceLogUrl, audioRetry, dataEngineBasePath]);
+
+  useEffect(() => {
+    if (!showChatTranscript || !chatTranscriptUrl) {
+      setChatMessages([]);
+      setChatLoading(false);
+      setChatFailed(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadChatTranscript = async () => {
+      setChatMessages([]);
+      setChatLoading(true);
+      setChatFailed(false);
+      try {
+        const blob = await downloadBlob(dataEngineBasePath + chatTranscriptUrl);
+        if (cancelled) return;
+        const text = await blob.text();
+        if (cancelled) return;
+        setChatMessages(mapChatTranscript(text, { customerName, userName }));
+      } catch {
+        if (!cancelled) {
+          setChatFailed(true);
+        }
+      } finally {
+        if (!cancelled) {
+          setChatLoading(false);
+        }
+      }
+    };
+
+    void loadChatTranscript();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    showChatTranscript,
+    chatTranscriptUrl,
+    chatRetry,
+    dataEngineBasePath,
+    customerName,
+    userName,
+  ]);
 
   return (
     <Box display="flex" flexDirection="column" gap={3} width="100%">
@@ -147,6 +205,21 @@ const InteractionPreviewPanel = ({ interactionId }: InteractionPreviewPanelProps
             {t('rightPanelTimelineEmpty')}
           </Typography>
         )
+      ) : chatLoading ? (
+        <Box display="flex" alignItems="center" justifyContent="center" minHeight={120}>
+          <CircularProgress size={24} aria-label={t('loading')} />
+        </Box>
+      ) : chatFailed ? (
+        <Box display="flex" alignItems="center" justifyContent="center" gap={1} minHeight={120}>
+          <Typography variant="body2" color="text.secondary">
+            {t('rightPanelTranscriptLoadError')}
+          </Typography>
+          <Button size="small" variant="text" onClick={() => setChatRetry((count) => count + 1)}>
+            {t('rightPanelRecordingRetry')}
+          </Button>
+        </Box>
+      ) : interaction && chatMessages.length > 0 ? (
+        <InteractionChatTranscript messages={chatMessages} interaction={interaction} />
       ) : (
         <Typography variant="body2" color="text.secondary">
           {t('rightPanelTranscriptEmpty')}

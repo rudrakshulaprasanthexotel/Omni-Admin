@@ -138,6 +138,8 @@
     "rightPanelSubDisposition": "Sub-Disposition",
     "rightPanelState": "State",
     "rightPanelTranscriptEmpty": "Transcript will appear here.",
+    "rightPanelTranscriptLoadError": "Couldn't load the transcript.",
+    "rightPanelTranscriptYou": "You",
     "rightPanelTimelineEmpty": "Timeline will appear here.",
     "rightPanelTimelineLoadError": "Couldn't load the timeline.",
     "timelineEventCallOutboundTitle": "Call Outbound",
