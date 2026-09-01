@@ -79,17 +79,16 @@ const CHANNEL_TYPE_ICON: Record<InteractionChannelType, IconName> = {
 };
 
 /**
- * Chip-value → wire `channel_type` mapping. The backend expects lowercase
- * `voice` / `whatsapp` / `sms` / `mail` / `chat` on the `channel_type` query
- * param of §4 row #16.
+ * Channel filter chips → `channel_type` query param. The interactions
+ * endpoint accepts `VOICE` / `CHAT` (same allowed values as other Data Engine
+ * channel-type filters).
  */
-const CHANNEL_TO_WIRE: Record<InteractionChannel, string> = {
-  [InteractionChannel.CALL]: 'voice',
-  [InteractionChannel.WHATSAPP]: 'whatsapp',
-  [InteractionChannel.SMS]: 'sms',
-  [InteractionChannel.MAIL]: 'mail',
-  [InteractionChannel.CHAT]: 'chat',
-};
+const CHANNEL_TYPE_FILTER = ['VOICE', 'CHAT'] as const;
+type ChannelTypeFilter = (typeof CHANNEL_TYPE_FILTER)[number];
+
+const toChannelTypesParam = (
+  channels: ChannelTypeFilter[],
+): ChannelTypeFilter[] | undefined => (channels.length > 0 ? channels : undefined);
 
 type SortModel = NonNullable<DataGridProps['sortModel']>;
 
@@ -275,7 +274,7 @@ export function Component() {
     useState<PaginationModel>(initialPaginationModel);
   const [sortModel, setSortModel] = useState<SortModel>(DEFAULT_SORT_MODEL);
   const sortBy = toSortBy(sortModel);
-  const [selectedChannels, setSelectedChannels] = useState<InteractionChannel[]>([]);
+  const [selectedChannels, setSelectedChannels] = useState<ChannelTypeFilter[]>([]);
   const [queues, setQueues] = useState<QueueDetailBean[]>([]);
   const [selectedQueueIds, setSelectedQueueIds] = useState<number[]>([]);
   const [dispositions, setDispositions] = useState<DispositionCodeBean[]>([]);
@@ -317,7 +316,7 @@ export function Component() {
     dispatch(resetInteractionsPagination());
   }
 
-  const [prevChannels, setPrevChannels] = useState<InteractionChannel[]>(selectedChannels);
+  const [prevChannels, setPrevChannels] = useState<ChannelTypeFilter[]>(selectedChannels);
   if (prevChannels.join('|') !== selectedChannels.join('|')) {
     setPrevChannels(selectedChannels);
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
@@ -457,10 +456,7 @@ export function Component() {
       processId,
       campaignIds: [campaignId],
       limit: paginationModel.pageSize,
-      channelTypes:
-        selectedChannels.length > 0
-          ? selectedChannels.map((c) => CHANNEL_TO_WIRE[c])
-          : undefined,
+      channelTypes: toChannelTypesParam(selectedChannels),
       queueIds: selectedQueueIds.length > 0 ? selectedQueueIds : undefined,
       dispositions: selectedDispositions.length > 0 ? selectedDispositions : undefined,
       customerName: searchQuery || undefined,
@@ -489,7 +485,7 @@ export function Component() {
     sortBy,
   ]);
 
-  const channelOptions = toMultiSelectOptions(Object.values(InteractionChannel));
+  const channelOptions = toMultiSelectOptions([...CHANNEL_TYPE_FILTER]);
 
   const channelInitialValue =
     selectedChannels.length > 0 ? selectedChannels.map((c) => String(c)) : undefined;
@@ -616,9 +612,9 @@ export function Component() {
   const handleToolbarFiltersChange = (appliedFilters: ToolbarFilterRecords): void => {
     const rawChannel = appliedFilters.channel;
     const pickedChannels = Array.isArray(rawChannel)
-      ? (rawChannel.filter((v): v is InteractionChannel =>
-          Object.values(InteractionChannel).includes(v as InteractionChannel),
-        ) as InteractionChannel[])
+      ? rawChannel.filter((v): v is ChannelTypeFilter =>
+          (CHANNEL_TYPE_FILTER as readonly string[]).includes(v as string),
+        )
       : [];
     setSelectedChannels(pickedChannels);
 
@@ -841,10 +837,7 @@ export function Component() {
         processId,
         campaignIds: [campaignId],
         limit: paginationModel.pageSize,
-        channelTypes:
-          selectedChannels.length > 0
-            ? selectedChannels.map((c) => CHANNEL_TO_WIRE[c])
-            : undefined,
+        channelTypes: toChannelTypesParam(selectedChannels),
         queueIds: selectedQueueIds.length > 0 ? selectedQueueIds : undefined,
         dispositions: selectedDispositions.length > 0 ? selectedDispositions : undefined,
         customerName: searchQuery || undefined,
