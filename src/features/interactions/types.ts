@@ -75,6 +75,8 @@ export interface Interaction {
   dispositionCode: string;
   /** Display-only unique interaction id shown in the last column. Falls back to `id`. */
   uniqueId?: string;
+  contactCenterId?: number;
+  processId?: number;
   /**
    * Row Play sources. Voice + chat come from the row bean; mail body /
    * attachments still wait on §4 row #17 (`/interactions/{id}/attachments`).

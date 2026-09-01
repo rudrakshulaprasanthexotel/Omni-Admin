@@ -19,6 +19,20 @@ export const formatShortDate = (iso: string) => {
   return `${day}, ${time}`;
 };
 
+/** Timeline stamps match the Interaction Detail spec: `Feb 10, 13:07`. */
+export const formatTimelineDate = (iso: string) => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const month = date.toLocaleString('en-US', { month: 'short' });
+  const day = date.getDate();
+  const time = date.toLocaleString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  return `${month} ${day}, ${time}`;
+};
+
 export const EMPTY_VALUE = '-';
 
 export const displayValue = (value: string | number | undefined | null) => {

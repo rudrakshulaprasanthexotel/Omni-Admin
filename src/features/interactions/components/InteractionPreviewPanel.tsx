@@ -1,5 +1,6 @@
 import { useEffect, useState, type SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import {
   AudioPlayer,
   Box,
@@ -9,12 +10,14 @@ import {
   Tabs,
   Typography,
 } from '@exotel-npm-dev/signal-design-system';
+import { selectContactCenterId } from '@/features/auth/authSlice';
 import { downloadBlob } from '@/shared/utils/downloadBlob';
 import { useAppSelector } from '@/store/hooks';
 import { selectInteractions } from '../interactionsSlice';
 import { InteractionChannel } from '../types';
 import { isPresent } from '../utils/formatInteraction';
 import InteractionOverview from './InteractionOverview';
+import InteractionTimeline from './InteractionTimeline';
 
 type PreviewTab = 'transcript' | 'overview' | 'timeline';
 
@@ -24,13 +27,20 @@ interface InteractionPreviewPanelProps {
 
 const InteractionPreviewPanel = ({ interactionId }: InteractionPreviewPanelProps) => {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<PreviewTab>('overview');
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioFailed, setAudioFailed] = useState(false);
   const [audioRetry, setAudioRetry] = useState(0);
   const interactions = useAppSelector(selectInteractions);
+  const sessionCcId = useAppSelector(selectContactCenterId);
   const interaction = interactions.find((row) => row.id === interactionId);
+  const processIdFromUrl = Number(searchParams.get('processId'));
+  const ccId = interaction?.contactCenterId ?? sessionCcId;
+  const processId =
+    interaction?.processId ??
+    (Number.isFinite(processIdFromUrl) ? processIdFromUrl : undefined);
   const voiceLogUrl = interaction?.voiceLogUrl;
   const showAudioPlayer =
     interaction?.channel === InteractionChannel.CALL && isPresent(voiceLogUrl);
@@ -123,15 +133,25 @@ const InteractionPreviewPanel = ({ interactionId }: InteractionPreviewPanelProps
         <Tab label={t('rightPanelTabTimeline')} value="timeline" />
       </Tabs>
 
-      {tab === 'overview' && interaction ? (
-        <InteractionOverview interaction={interaction} />
-      ) : tab !== 'overview' ? (
+      {tab === 'overview' ? (
+        interaction ? <InteractionOverview interaction={interaction} /> : null
+      ) : tab === 'timeline' ? (
+        ccId != null && processId != null ? (
+          <InteractionTimeline
+            ccId={ccId}
+            processId={processId}
+            interactionId={interactionId}
+          />
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            {t('rightPanelTimelineEmpty')}
+          </Typography>
+        )
+      ) : (
         <Typography variant="body2" color="text.secondary">
-          {tab === 'transcript'
-            ? t('rightPanelTranscriptEmpty')
-            : t('rightPanelTimelineEmpty')}
+          {t('rightPanelTranscriptEmpty')}
         </Typography>
-      ) : null}
+      )}
     </Box>
   );
 };

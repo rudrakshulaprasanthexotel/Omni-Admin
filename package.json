@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@exotel-npm-dev/signal-design-system": "file:public/exotel-npm-dev-signal-design-system-1.3.0.tgz",
+    "@mui/lab": "^7.0.1-beta.25",
     "@reduxjs/toolkit": "2.12.0",
     "axios": "1.16.1",
     "i18next": "26.3.0",

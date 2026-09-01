@@ -8,6 +8,7 @@ import type { Store } from '@reduxjs/toolkit';
 
 const logger = AmeyoLogger.get('ApiClient');
 
+let storeRef: Store<RootState> | null = null;
 
 const apiClient: AxiosInstance = axios.create({
   timeout: 30_000,
@@ -26,7 +27,12 @@ async function refreshAuthToken(store: Store<RootState>): Promise<string> {
   return result.jwtToken;
 }
 
+export function getRootState(): RootState | undefined {
+  return storeRef?.getState();
+}
+
 export function setupApiClientInterceptors(store: Store<RootState>): void {
+  storeRef = store;
   apiClient.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
       logger.debug('Request:', config.method?.toUpperCase(), config.url);

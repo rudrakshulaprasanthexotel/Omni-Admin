@@ -33,6 +33,16 @@ function pickField<TValue>(
   return undefined;
 }
 
+function pickNumber(bean: Record<string, unknown>, ...keys: string[]): number | undefined {
+  const value = pickField<number | string>(bean, ...keys);
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+}
+
 function pickString(bean: Record<string, unknown>, ...keys: string[]): string | undefined {
   for (const key of keys) {
     const value = bean[key];
@@ -126,6 +136,10 @@ const CONSUMED_KEYS = new Set([
   'last_assigned_user_id',
   'lastAssignedUserName',
   'last_assigned_user_name',
+  'contactCenterId',
+  'contact_center_id',
+  'processId',
+  'process_id',
   'lastCampaignName',
   'last_campaign_name',
   'lastQueueName',
@@ -285,6 +299,8 @@ export function mapInteractionOutPutBeanToInteraction(
     dispositionCode;
   const uniqueId =
     pickString(bean, 'interactionRelationId', 'interaction_relation_id') ?? id;
+  const contactCenterId = pickNumber(bean, 'contactCenterId', 'contact_center_id');
+  const processId = pickNumber(bean, 'processId', 'process_id');
   const status = pickString(bean, 'status');
 
   const customerContact =
@@ -335,6 +351,8 @@ export function mapInteractionOutPutBeanToInteraction(
     dispositionClass,
     dispositionCode,
     uniqueId,
+    contactCenterId,
+    processId,
     voiceLogUrl,
     chatTranscriptUrl,
     interactionState: resolveInteractionState(status),
