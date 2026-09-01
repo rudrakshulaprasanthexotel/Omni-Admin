@@ -24,7 +24,7 @@ import {
 type ToolbarFilterRecords = Parameters<NonNullable<DataGridProps['onToolbarFiltersChange']>>[0];
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { debounce } from '@/shared/utils/debounce';
-import type { QueueDetailBean } from '@/boilerplate/cmsApis/models';
+import type { CampaignUserResponse, QueueDetailBean } from '@/boilerplate/cmsApis/models';
 import type { DispositionCodeBean } from '@/services/apiClient/supervisorApis';
 import { selectContactCenterId } from '@/features/auth/authSlice';
 import { fetchAssignedProcesses } from '@/features/process/asyncActions';
@@ -37,6 +37,7 @@ import {
   fetchAssignedCampaigns,
   fetchCampaignDispositions,
   fetchCampaignQueues,
+  fetchCampaignUsers,
   fetchInteractions,
   type FetchInteractionsArgs,
 } from '../asyncActions';
@@ -169,6 +170,17 @@ const toDispositionOptions = (codes: DispositionCodeBean[]): MultiSelectOption[]
     })
     .filter((option): option is MultiSelectOption => option != null);
 
+const toUserOptions = (users: CampaignUserResponse[]): MultiSelectOption[] =>
+  users
+    .filter((user): user is CampaignUserResponse & { userId: string } =>
+      typeof user.userId === 'string' && user.userId.length > 0,
+    )
+    .map((user) => ({
+      id: user.userId,
+      value: user.userId,
+      label: user.userName?.trim() || user.userId,
+    }));
+
 export function Component() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
@@ -246,6 +258,8 @@ export function Component() {
   const [selectedQueueIds, setSelectedQueueIds] = useState<number[]>([]);
   const [dispositions, setDispositions] = useState<DispositionCodeBean[]>([]);
   const [selectedDispositions, setSelectedDispositions] = useState<string[]>([]);
+  const [users, setUsers] = useState<CampaignUserResponse[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const commitSearch = useRef(
@@ -273,6 +287,8 @@ export function Component() {
     setQueues([]);
     setSelectedDispositions([]);
     setDispositions([]);
+    setSelectedUserIds([]);
+    setUsers([]);
     dispatch(resetInteractionsPagination());
   }
 
@@ -300,6 +316,13 @@ export function Component() {
   const [prevDispositions, setPrevDispositions] = useState<string[]>(selectedDispositions);
   if (prevDispositions.join('|') !== selectedDispositions.join('|')) {
     setPrevDispositions(selectedDispositions);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    dispatch(resetInteractionsPagination());
+  }
+
+  const [prevUserIds, setPrevUserIds] = useState<string[]>(selectedUserIds);
+  if (prevUserIds.join('|') !== selectedUserIds.join('|')) {
+    setPrevUserIds(selectedUserIds);
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
     dispatch(resetInteractionsPagination());
   }
@@ -392,6 +415,32 @@ export function Component() {
     };
   }, [dispatch, campaignId]);
 
+  useEffect(() => {
+    if (campaignId === null) return;
+    if (resolvedCcId === undefined || processId === undefined) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await dispatch(
+          fetchCampaignUsers({
+            contactCenterId: resolvedCcId,
+            processId,
+            campaignId,
+          }),
+        ).unwrap();
+        // @ts-ignore Swagger response and API response are different
+        if (!cancelled) setUsers((result.response?.data?.response ?? []).map(d => d?.data));
+      } catch {
+        if (!cancelled) setUsers([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, campaignId, resolvedCcId, processId]);
+
   /**
    * Cursor-based paging shim. The DataGrid emits page-index deltas but the
    * endpoint (§4 row #16) only exposes prev/next cursors — so we translate:
@@ -426,6 +475,7 @@ export function Component() {
       channelTypes: toChannelTypesParam(selectedChannels),
       queueIds: selectedQueueIds.length > 0 ? selectedQueueIds : undefined,
       dispositions: selectedDispositions.length > 0 ? selectedDispositions : undefined,
+      userIds: selectedUserIds.length > 0 ? selectedUserIds : undefined,
       customerName: searchQuery || undefined,
       sortBy,
       ...cursors,
@@ -449,6 +499,7 @@ export function Component() {
     selectedChannels,
     selectedQueueIds,
     selectedDispositions,
+    selectedUserIds,
     sortBy,
   ]);
 
@@ -464,6 +515,15 @@ export function Component() {
       label: t('interactionsFilterChannel'),
       multiSelectOptions: channelOptions,
       initialValue: channelInitialValue,
+    },
+    {
+      id: 'user',
+      type: 'multi-select',
+      label: t('interactionsFilterUser'),
+      multiSelectOptions: toUserOptions(users),
+      initialValue: selectedUserIds.length > 0 ? selectedUserIds : undefined,
+      showSelectAll: true,
+      disabled: users.length === 0,
     },
     {
       id: 'dateAdded',
@@ -502,7 +562,7 @@ export function Component() {
     iconName: 'funnel',
     filterSearchPlaceholder: t('interactionsFiltersSearchPlaceholder'),
     groups: [
-      ['channel', 'dateAdded'],
+      ['channel', 'user', 'dateAdded'],
       ['queue', 'disposition'],
     ],
   };
@@ -596,6 +656,12 @@ export function Component() {
       ? rawDisposition.filter((value): value is string => typeof value === 'string' && value.length > 0)
       : [];
     setSelectedDispositions(pickedDispositions);
+
+    const rawUser = appliedFilters.user;
+    const pickedUserIds = Array.isArray(rawUser)
+      ? rawUser.filter((value): value is string => typeof value === 'string' && value.length > 0)
+      : [];
+    setSelectedUserIds(pickedUserIds);
   };
 
   // Title badge only renders a count once the backend surfaces a real integer.
@@ -817,6 +883,7 @@ export function Component() {
         channelTypes: toChannelTypesParam(selectedChannels),
         queueIds: selectedQueueIds.length > 0 ? selectedQueueIds : undefined,
         dispositions: selectedDispositions.length > 0 ? selectedDispositions : undefined,
+        userIds: selectedUserIds.length > 0 ? selectedUserIds : undefined,
         customerName: searchQuery || undefined,
         sortBy,
         // Refresh always reloads the current cursor position.

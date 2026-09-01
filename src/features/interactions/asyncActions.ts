@@ -5,7 +5,10 @@ import type {
   CustomCursorMetadata,
   InteractionOutPutBean,
 } from '@/boilerplate/dataEngineApis/models';
-import type { QueueDetailBean } from '@/boilerplate/cmsApis/models';
+import type {
+  CommonResponseListCampaignUserResponseCustomOffsetMetadata,
+  QueueDetailBean,
+} from '@/boilerplate/cmsApis/models';
 import { GetInteractionWithFilterStateEnum } from '@/boilerplate/dataEngineApis/apis/interactions-api';
 import { cmsApis } from '@/services/apiClient/cmsApis';
 import { dataEngineApis } from '@/services/apiClient/dataEngineApis';
@@ -174,6 +177,35 @@ export const fetchCampaignQaDenominator = createAsyncThunk<
       return rejectWithValue({
         isSuccess: false,
         message: 'Failed to load QA parameters',
+      });
+    }
+  },
+);
+
+const CAMPAIGN_USERS_LIMIT = 1000;
+
+export const fetchCampaignUsers = createAsyncThunk<
+  NormalisedAxiosResponse<CommonResponseListCampaignUserResponseCustomOffsetMetadata>,
+  { contactCenterId: number; processId: number; campaignId: number },
+  { rejectValue: NormalisedAxiosResponse }
+>(
+  'interactions/fetchCampaignUsers',
+  async ({ contactCenterId, processId, campaignId }, { rejectWithValue }) => {
+    try {
+      const response = await cmsApis.campaign.getAllCampaignUsersInCampaign1(
+        contactCenterId,
+        processId,
+        campaignId,
+        CAMPAIGN_USERS_LIMIT,
+      );
+      return normaliseAxiosResponse(response, 'success');
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        return rejectWithValue(normaliseAxiosResponse(error, 'error'));
+      }
+      return rejectWithValue({
+        isSuccess: false,
+        message: 'Failed to load users',
       });
     }
   },
