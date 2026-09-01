@@ -140,6 +140,8 @@ const CONSUMED_KEYS = new Set([
   'contact_center_id',
   'processId',
   'process_id',
+  'lastCampaignId',
+  'last_campaign_id',
   'lastCampaignName',
   'last_campaign_name',
   'lastQueueName',
@@ -270,9 +272,12 @@ export function mapInteractionOutPutBeanToInteraction(
   );
 
   const id = pickString(bean, 'id') ?? '';
+  const customerId = pickString(bean, 'customerId', 'customer_id');
   const customerName = pickString(bean, 'customerName', 'customer_name') ?? '—';
+  const userId = pickString(bean, 'lastAssignedUserId', 'last_assigned_user_id');
   const userName =
     pickString(bean, 'lastAssignedUserName', 'last_assigned_user_name') ?? '—';
+  const campaignId = pickNumber(bean, 'lastCampaignId', 'last_campaign_id');
   const campaignName = pickString(bean, 'lastCampaignName', 'last_campaign_name') ?? '';
   const queueName = pickString(bean, 'lastQueueName', 'last_queue_name') ?? '';
   const channelName = pickString(bean, 'channelName', 'channel_name');
@@ -327,11 +332,11 @@ export function mapInteractionOutPutBeanToInteraction(
 
   return {
     id,
-    customer: { name: customerName },
+    customer: { id: customerId, name: customerName },
     channelDetail: customerContact,
     channel: resolveChannel(channelName),
     channelType: resolveChannelType(direction),
-    user: { name: userName },
+    user: { id: userId, name: userName },
     scoring,
     campaign: campaignName,
     queue: queueName,
@@ -353,6 +358,7 @@ export function mapInteractionOutPutBeanToInteraction(
     uniqueId,
     contactCenterId,
     processId,
+    campaignId,
     voiceLogUrl,
     chatTranscriptUrl,
     interactionState: resolveInteractionState(status),

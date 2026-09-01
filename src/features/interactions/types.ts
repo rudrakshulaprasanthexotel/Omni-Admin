@@ -28,6 +28,7 @@ export type InteractionState = 'OPEN' | 'CLOSED';
 export interface Interaction {
   id: string;
   customer: {
+    id?: string;
     name: string;
     avatarUrl?: string;
   };
@@ -36,6 +37,7 @@ export interface Interaction {
   channel: InteractionChannel;
   channelType: InteractionChannelType;
   user: {
+    id?: string;
     name: string;
     avatarUrl?: string;
   };
@@ -77,6 +79,7 @@ export interface Interaction {
   uniqueId?: string;
   contactCenterId?: number;
   processId?: number;
+  campaignId?: number;
   /**
    * Row Play sources. Voice + chat come from the row bean; mail body /
    * attachments still wait on §4 row #17 (`/interactions/{id}/attachments`).

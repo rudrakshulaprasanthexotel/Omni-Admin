@@ -62,6 +62,7 @@ import {
   type Interaction,
 } from '../types';
 import IdentityCell from '../components/IdentityCell';
+import IdentityHoverCard from '../components/IdentityHoverCard';
 import InteractionRowActions from '../components/InteractionRowActions';
 import { SelectorAvatar, SelectorListItem } from '../components/SelectorEntity';
 import { CHANNEL_ICON, CHANNEL_TYPE_ICON } from '../constants';
@@ -705,7 +706,14 @@ export function Component() {
         headerName: t('interactionsColumnCustomerName'),
         width: 208,
         renderCell: (params: GridRenderCellParams<Interaction>) => (
-          <IdentityCell kind="customer" name={params.row.customer.name} />
+          <IdentityHoverCard
+            kind="customer"
+            name={params.row.customer.name}
+            customerId={params.row.customer.id}
+            campaignId={params.row.campaignId ?? campaignId ?? undefined}
+          >
+            <IdentityCell kind="customer" name={params.row.customer.name} />
+          </IdentityHoverCard>
         ),
       },
       {
@@ -747,7 +755,13 @@ export function Component() {
         headerName: t('interactionsColumnUser'),
         width: 208,
         renderCell: (params: GridRenderCellParams<Interaction>) => (
-          <IdentityCell kind="user" name={params.row.user.name} />
+          <IdentityHoverCard
+            kind="user"
+            name={params.row.user.name}
+            userId={params.row.user.id}
+          >
+            <IdentityCell kind="user" name={params.row.user.name} />
+          </IdentityHoverCard>
         ),
       },
       {
@@ -869,7 +883,7 @@ export function Component() {
         ),
       },
     ],
-    [t, channelColor],
+    [t, channelColor, campaignId],
   );
 
   const handleRefresh = () => {

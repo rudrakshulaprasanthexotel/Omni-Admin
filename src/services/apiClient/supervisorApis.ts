@@ -50,9 +50,9 @@ export interface UserGroup {
 
 export interface ContactCenterUser {
   userId: string;
-  userName: string;
+  userName?: string;
   userType?: string;
-  groupIds?: number[];
+  systemUserType?: string;
 }
 
 export interface AgentQueue {
@@ -259,9 +259,32 @@ export const supervisorApis = {
    * `SupervisorGwtRpcService.getAllContactUsersWithGroupInfo` by hitting the
    * underlying REST endpoint directly.
    */
-  getAllContactCenterUsers(info = false): Promise<AxiosResponse<ContactCenterUser[]>> {
+  getAllContactCenterUsers(info?: boolean): Promise<AxiosResponse<ContactCenterUser[]>> {
     return apiClient.get<ContactCenterUser[]>(
       `${CC_REST_BASE}/contactCenterUsers/getAllContactCenterUsers${buildQuery({ info })}`,
+    );
+  },
+
+  /**
+   * Customer attribute values for the hover card.
+   * `GET /ameyorestapi/cc/getCustomerInfosForCustomerId?campaignId=&customerId=`.
+   */
+  getCustomerInfosForCustomerId(
+    campaignId: number,
+    customerId: string,
+  ): Promise<AxiosResponse<unknown>> {
+    return apiClient.get(
+      `${CC_REST_BASE}/getCustomerInfosForCustomerId${buildQuery({ campaignId, customerId })}`,
+    );
+  },
+
+  /**
+   * Campaigns assigned to a specific user. Channel is derived from `campaignType`.
+   * `GET /ameyorestapi/cc/hybrid/campaigns/getAssignedByUserId?userId=`.
+   */
+  getCampaignsAssignedByUserId(userId: string): Promise<AxiosResponse<AssignedCampaign[]>> {
+    return apiClient.get<AssignedCampaign[]>(
+      `${CC_REST_BASE}/hybrid/campaigns/getAssignedByUserId${buildQuery({ userId })}`,
     );
   },
 

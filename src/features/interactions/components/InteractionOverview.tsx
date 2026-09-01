@@ -22,6 +22,7 @@ import {
   formatShortDate,
   isPresent,
 } from '../utils/formatInteraction';
+import IdentityHoverCard from './IdentityHoverCard';
 
 const LABEL_WIDTH = 147;
 
@@ -149,10 +150,23 @@ const InteractionOverview = ({ interaction }: InteractionOverviewProps) => {
 
       <Box display="flex" flexDirection="column" gap={1.5} width="100%">
         <OverviewRow label={t('interactionsColumnCustomerName')}>
-          <OverviewIdentity kind="customer" name={interaction.customer.name} />
+          <IdentityHoverCard
+            kind="customer"
+            name={interaction.customer.name}
+            customerId={interaction.customer.id}
+            campaignId={interaction.campaignId}
+          >
+            <OverviewIdentity kind="customer" name={interaction.customer.name} />
+          </IdentityHoverCard>
         </OverviewRow>
         <OverviewRow label={t('interactionsColumnUser')}>
-          <OverviewIdentity kind="user" name={interaction.user.name} />
+          <IdentityHoverCard
+            kind="user"
+            name={interaction.user.name}
+            userId={interaction.user.id}
+          >
+            <OverviewIdentity kind="user" name={interaction.user.name} />
+          </IdentityHoverCard>
         </OverviewRow>
         <OverviewRow label={t('interactionsColumnChannelDetail')}>
           <OverviewText value={interaction.channelDetail} />
