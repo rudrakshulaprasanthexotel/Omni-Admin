@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, HoverCard, Icon, Typography } from '@exotel-npm-dev/signal-design-system';
 
-/** 322px of content inside the card's 12px padding. */
 const CARD_WIDTH = 348;
 
 const CopilotLogomark = () => (
@@ -30,10 +29,6 @@ interface AiTranscriptPromoProps {
   onLearnMore?: () => void;
 }
 
-/**
- * Hover card shown over the locked Transcript tab on voice interactions,
- * where the transcript itself sits behind the AI add-on.
- */
 const AiTranscriptPromo = ({ children, onRequestDemo, onLearnMore }: AiTranscriptPromoProps) => {
   const { t } = useTranslation();
 

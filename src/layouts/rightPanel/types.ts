@@ -1,3 +1,5 @@
+import type { InteractionPreviewTab } from '@/features/interactions/types';
+
 export const RightPanelActionType = {
   INTERACTION_PREVIEW: 'interaction-preview',
 } as const;
@@ -8,6 +10,7 @@ export type RightPanelActionType =
 export type RightPanelAction = {
   type: typeof RightPanelActionType.INTERACTION_PREVIEW;
   interactionId: string;
+  tab?: InteractionPreviewTab;
 };
 
 /** Figma right-panel width on Interaction Details (node 558:52897). */

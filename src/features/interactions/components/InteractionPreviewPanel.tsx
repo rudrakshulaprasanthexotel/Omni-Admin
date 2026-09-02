@@ -15,7 +15,7 @@ import { selectContactCenterId } from '@/features/auth/authSlice';
 import { downloadBlob } from '@/shared/utils/downloadBlob';
 import { useAppSelector } from '@/store/hooks';
 import { selectInteractionRows, selectQaDenominatorByCampaignId } from '../interactionsSlice';
-import { InteractionChannel } from '../types';
+import { InteractionChannel, type InteractionPreviewTab } from '../types';
 import { isPresent } from '../utils/formatInteraction';
 import { mapChatTranscript, type ChatTranscriptMessage } from '../utils/mapChatTranscript';
 import { mapInteractionRows } from '../utils/mapInteraction';
@@ -24,13 +24,15 @@ import InteractionChatTranscript from './InteractionChatTranscript';
 import InteractionOverview from './InteractionOverview';
 import InteractionTimeline from './InteractionTimeline';
 
-type PreviewTab = 'transcript' | 'overview' | 'timeline';
-
 interface InteractionPreviewPanelProps {
   interactionId: string;
+  initialTab?: InteractionPreviewTab;
 }
 
-const InteractionPreviewPanel = ({ interactionId }: InteractionPreviewPanelProps) => {
+const InteractionPreviewPanel = ({
+  interactionId,
+  initialTab = 'overview',
+}: InteractionPreviewPanelProps) => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const interactionRows = useAppSelector(selectInteractionRows);
@@ -43,7 +45,7 @@ const InteractionPreviewPanel = ({ interactionId }: InteractionPreviewPanelProps
       ),
     [interactionRows, qaDenominatorByCampaignId, interactionId],
   );
-  const [tab, setTab] = useState<PreviewTab>('overview');
+  const [tab, setTab] = useState<InteractionPreviewTab>(initialTab);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioFailed, setAudioFailed] = useState(false);
@@ -192,20 +194,20 @@ const InteractionPreviewPanel = ({ interactionId }: InteractionPreviewPanelProps
       ) : null}
       <Tabs
         value={activeTab}
-        onChange={(_: SyntheticEvent, value: string | number) => setTab(value as PreviewTab)}
+        onChange={(_: SyntheticEvent, value: string | number) =>
+          setTab(value as InteractionPreviewTab)
+        }
         tabStyle="button"
         variant="fullWidth"
       >
         <Tab
           value="transcript"
           disabled={transcriptLocked}
-          // The card opens from the tab itself, so the disabled tab still has
-          // to receive pointer events.
           sx={transcriptLocked ? { '&.Mui-disabled': { pointerEvents: 'auto' } } : undefined}
           label={
             transcriptLocked ? (
               <AiTranscriptPromo>
-                <Box display="flex" alignItems="center" gap={0.5}>
+                <Box display="flex" alignItems="center" gap={0.5} sx={{ opacity: 0.5 }}>
                   {t('rightPanelTabTranscript')}
                   <Icon name="magic-wand" size="sm" />
                 </Box>

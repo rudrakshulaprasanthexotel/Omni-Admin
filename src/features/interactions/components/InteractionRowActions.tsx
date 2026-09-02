@@ -15,7 +15,11 @@ import { useAppDispatch } from '@/store/hooks';
 import { openRightPanel } from '@/layouts/rightPanel/rightPanelSlice';
 import { RightPanelActionType } from '@/layouts/rightPanel/types';
 import { downloadBlob, saveBlobAsFile } from '@/shared/utils/downloadBlob';
-import { InteractionChannel, type Interaction } from '../types';
+import {
+  InteractionChannel,
+  type Interaction,
+  type InteractionPreviewTab,
+} from '../types';
 import { isPresent } from '../utils/formatInteraction';
 
 interface InteractionRowActionsProps {
@@ -39,18 +43,19 @@ const InteractionRowActions = ({ interaction }: InteractionRowActionsProps) => {
   const isVoice = interaction.channel === InteractionChannel.CALL;
   const hasRecording = isPresent(voiceLogUrl);
 
-  const openPreview = () => {
+  const openPreview = (tab?: InteractionPreviewTab) => {
     dispatch(
       openRightPanel({
         type: RightPanelActionType.INTERACTION_PREVIEW,
         interactionId: interaction.id,
+        tab,
       }),
     );
   };
 
   const handlePlay = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    openPreview();
+    openPreview(isVoice ? undefined : 'transcript');
   };
 
   const handleMoreClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -93,16 +98,27 @@ const InteractionRowActions = ({ interaction }: InteractionRowActionsProps) => {
     </MenuItem>
   );
 
+  const playButton = (
+    <IconButton
+      size="small"
+      variant="outlined"
+      disabled={isVoice && !hasRecording}
+      aria-label={isVoice ? t('interactionsPlayAction') : t('interactionsTranscriptAction')}
+      onClick={handlePlay}
+    >
+      <Icon name={isVoice ? 'play-circle' : 'chat-teardrop-text'} />
+    </IconButton>
+  );
+
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: '100%' }}>
-      <IconButton
-        size="small"
-        variant="outlined"
-        aria-label={t('interactionsPlayAction')}
-        onClick={handlePlay}
-      >
-        <Icon name="play-circle" />
-      </IconButton>
+      {isVoice && !hasRecording ? (
+        <Tooltip title={t('interactionsRecordingUnavailable')} placement="left">
+          <span>{playButton}</span>
+        </Tooltip>
+      ) : (
+        playButton
+      )}
       <IconButton
         size="small"
         variant="outlined"
@@ -131,7 +147,7 @@ const InteractionRowActions = ({ interaction }: InteractionRowActionsProps) => {
           hasRecording ? (
             downloadItem
           ) : (
-            <Tooltip title={t('interactionsDownloadAudioUnavailable')} placement="left">
+            <Tooltip title={t('interactionsRecordingUnavailable')} placement="left">
               <span>{downloadItem}</span>
             </Tooltip>
           )

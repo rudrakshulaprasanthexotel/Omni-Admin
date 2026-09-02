@@ -25,6 +25,8 @@ export type InteractionChannelType =
  */
 export type InteractionState = 'OPEN' | 'CLOSED';
 
+export type InteractionPreviewTab = 'transcript' | 'overview' | 'timeline';
+
 export interface Interaction {
   id: string;
   customer: {

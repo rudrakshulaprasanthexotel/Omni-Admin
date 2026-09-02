@@ -30,8 +30,9 @@ const RightPanelContent = ({ action }: { action: RightPanelAction }) => {
     case RightPanelActionType.INTERACTION_PREVIEW:
       return (
         <InteractionPreviewPanel
-          key={action.interactionId}
+          key={`${action.interactionId}:${action.tab ?? ''}`}
           interactionId={action.interactionId}
+          initialTab={action.tab}
         />
       );
     default:

@@ -1,8 +1,9 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, isAnyOf } from '@reduxjs/toolkit';
 import type {
   CustomCursorMetadata,
   InteractionOutPutBean,
 } from '@/boilerplate/dataEngineApis/models';
+import { logout } from '@/features/auth/asyncActions';
 import type { NormalisedAxiosResponse } from '@/shared/utils/normaliseAxiosResponse';
 import type { RootState } from '@/store';
 import {
@@ -186,7 +187,10 @@ const interactionsSlice = createSlice({
       })
       .addCase(fetchCampaignQaDenominator.rejected, (state) => {
         state.qaDenominatorLoading = false;
-      });
+      })
+      // Reset once logout settles either way — the session is over even when
+      // the logout call itself fails.
+      .addMatcher(isAnyOf(logout.fulfilled, logout.rejected), () => initialState);
   },
 });
 
