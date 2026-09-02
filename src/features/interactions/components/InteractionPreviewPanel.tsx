@@ -41,9 +41,7 @@ const InteractionPreviewPanel = ({ interactionId }: InteractionPreviewPanelProps
       ),
     [interactionRows, qaDenominatorByCampaignId, interactionId],
   );
-  const [tab, setTab] = useState<PreviewTab>(
-    interaction?.channel === InteractionChannel.CHAT ? 'transcript' : 'overview',
-  );
+  const [tab, setTab] = useState<PreviewTab>('overview');
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioFailed, setAudioFailed] = useState(false);

@@ -12,3 +12,5 @@ export type RightPanelAction = {
 
 /** Figma right-panel width on Interaction Details (node 558:52897). */
 export const RIGHT_PANEL_WIDTH = 419;
+
+export const RIGHT_PANEL_TRANSITION_MS = 225;
