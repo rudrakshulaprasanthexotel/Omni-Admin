@@ -1,5 +1,5 @@
 import { Navigation, type NavItemPayload, type NavSectionProps } from "@exotel-npm-dev/signal-design-system";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAppSelector } from "@/store/hooks";
 import { selectLoginResponse } from "@/features/auth/authSlice";
 import { UserType } from "@/features/auth/types";
@@ -39,6 +39,7 @@ const supervisorNavigationSections: NavSectionProps[] = [
 
 const LeftSidebar = () => {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const loginResponse = useAppSelector(selectLoginResponse);
   const userType = loginResponse?.userSessionInfo?.userType ?? '';
 
@@ -51,7 +52,11 @@ const LeftSidebar = () => {
   };
 
   return (
-    <Navigation onNavigate={handleNavigate} items={navigationSections} />
+    <Navigation
+      initialPath={pathname}
+      onNavigate={handleNavigate}
+      items={navigationSections}
+    />
   );
 };
 

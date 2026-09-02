@@ -541,6 +541,7 @@ export function Component() {
       id: 'channel',
       type: 'multi-select',
       label: t('interactionsFilterChannel'),
+      iconName: 'chats-circle',
       multiSelectOptions: channelOptions,
       initialValue: channelInitialValue,
     },
@@ -548,6 +549,7 @@ export function Component() {
       id: 'user',
       type: 'multi-select',
       label: t('interactionsFilterUser'),
+      iconName: 'user',
       multiSelectOptions: toUserOptions(users),
       initialValue: selectedUserIds.length > 0 ? selectedUserIds : undefined,
       showSelectAll: true,
@@ -565,6 +567,7 @@ export function Component() {
       id: 'queue',
       type: 'multi-select',
       label: t('interactionsFilterQueue'),
+      iconName: 'queue',
       multiSelectOptions: toQueueOptions(queues),
       initialValue:
         selectedQueueIds.length > 0
@@ -577,6 +580,7 @@ export function Component() {
       id: 'disposition',
       type: 'multi-select',
       label: t('interactionsFilterDisposition'),
+      iconName: 'tag',
       multiSelectOptions: toDispositionOptions(dispositions),
       initialValue:
         selectedDispositions.length > 0 ? selectedDispositions : undefined,
@@ -589,10 +593,6 @@ export function Component() {
     label: t('interactionsFiltersLabel'),
     iconName: 'funnel',
     filterSearchPlaceholder: t('interactionsFiltersSearchPlaceholder'),
-    groups: [
-      ['channel', 'user', 'dateAdded'],
-      ['queue', 'disposition'],
-    ],
   };
 
   // Clearing the campaign is intentional — the effect above then lands on the
