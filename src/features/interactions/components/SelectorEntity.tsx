@@ -4,35 +4,57 @@ import {
   Typography,
   getAvatarColors,
   getInitials,
+  type AvatarSize,
 } from '@exotel-npm-dev/signal-design-system';
 
 /** Processes read as neutral scaffolding; campaigns are the thing being picked. */
 type SelectorEntityKind = 'process' | 'campaign';
 
+/** Signal's Avatar scale. Only the `collection` variant reads `size` natively. */
+const AVATAR_SIZE_PX: Record<AvatarSize, number> = {
+  small: 18,
+  medium: 24,
+  large: 32,
+  extraLarge: 40,
+};
+
 interface SelectorAvatarProps {
   name: string;
   kind: SelectorEntityKind;
-  size?: number;
+  size?: AvatarSize;
 }
 
-export const SelectorAvatar = ({ name, kind, size = 24 }: SelectorAvatarProps) => {
+export const SelectorAvatar = ({ name, kind, size = 'medium' }: SelectorAvatarProps) => {
   // Campaign colors come from the Signal DS `getAvatarColors` helper, so a
   // campaign keeps the same swatch across the trigger and the child list.
-  const { bgcolor, color } =
-    kind === 'campaign'
-      ? getAvatarColors(name)
-      : { bgcolor: 'grey.600', color: 'common.white' };
+  if (kind === 'campaign') {
+    const { bgcolor, color } = getAvatarColors(name);
+
+    return (
+      <Avatar
+        variant="collection"
+        size={size}
+        bgcolor={bgcolor}
+        color={color}
+        alt={name}
+      >
+        {getInitials(name)}
+      </Avatar>
+    );
+  }
+
+  const sizePx = AVATAR_SIZE_PX[size];
 
   return (
     <Avatar
       alt={name}
       sx={{
-        width: size,
-        height: size,
-        fontSize: size / 2.4,
+        width: sizePx,
+        height: sizePx,
+        fontSize: sizePx / 2.4,
         borderRadius: 0.75,
-        bgcolor,
-        color,
+        bgcolor: 'grey.600',
+        color: 'common.white',
       }}
     >
       {getInitials(name)}

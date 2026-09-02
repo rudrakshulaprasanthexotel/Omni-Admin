@@ -41,6 +41,7 @@ import {
   type FetchInteractionsArgs,
 } from '../asyncActions';
 import {
+  clearInteractions,
   selectInteractionRows,
   selectInteractionsAfterCursor,
   selectInteractionsBeforeCursor,
@@ -407,6 +408,11 @@ export function Component() {
     }
   }, [dispatch, campaigns.length]);
 
+  // Drops the loaded interactions when the user navigates to another screen.
+  useEffect(() => () => {
+    dispatch(clearInteractions());
+  }, [dispatch]);
+
   // Normally already loaded by `useSessionBootstrap`; this covers a hard reload
   // straight onto /interactions before the bootstrap thunk settles.
   useEffect(() => {
@@ -593,6 +599,7 @@ export function Component() {
     label: t('interactionsFiltersLabel'),
     iconName: 'funnel',
     filterSearchPlaceholder: t('interactionsFiltersSearchPlaceholder'),
+    filterStoreId: campaignId != null ? String(campaignId) : undefined,
   };
 
   // Clearing the campaign is intentional — the effect above then lands on the
@@ -651,7 +658,7 @@ export function Component() {
     trigger: {
       label: activeCampaign?.campaignName ?? t('interactionsSelectorTriggerPlaceholder'),
       startAdornment: activeCampaign ? (
-        <SelectorAvatar name={activeCampaign.campaignName} kind="campaign" size={20} />
+        <SelectorAvatar name={activeCampaign.campaignName} kind="campaign" />
       ) : undefined,
     },
   };

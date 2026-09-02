@@ -92,9 +92,17 @@ const interactionsSlice = createSlice({
   name: 'interactions',
   initialState,
   reducers: {
+
     clearInteractions(state) {
       state.rows = [];
+      state.loading = false;
       state.error = null;
+      state.pageIndex = 0;
+      state.beforeCursor = null;
+      state.afterCursor = null;
+      state.currentPageCount = 0;
+      state.totalRows = -1;
+      state.totalString = null;
     },
     /**
      * Resets pagination to page 0 and clears cursors. Called whenever a
