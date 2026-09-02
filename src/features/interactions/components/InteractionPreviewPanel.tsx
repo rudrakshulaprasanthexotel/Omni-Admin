@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Icon,
   Tab,
   Tabs,
   Typography,
@@ -18,6 +19,7 @@ import { InteractionChannel } from '../types';
 import { isPresent } from '../utils/formatInteraction';
 import { mapChatTranscript, type ChatTranscriptMessage } from '../utils/mapChatTranscript';
 import { mapInteractionRows } from '../utils/mapInteraction';
+import AiTranscriptPromo from './AiTranscriptPromo';
 import InteractionChatTranscript from './InteractionChatTranscript';
 import InteractionOverview from './InteractionOverview';
 import InteractionTimeline from './InteractionTimeline';
@@ -60,9 +62,11 @@ const InteractionPreviewPanel = ({ interactionId }: InteractionPreviewPanelProps
   const customerName = interaction?.customer.name;
   const userName = interaction?.user.name;
   const dataEngineBasePath = import.meta.env.VITE_DATA_ENGINE_API_BASE_PATH;
-  const showAudioPlayer =
-    interaction?.channel === InteractionChannel.CALL && isPresent(voiceLogUrl);
+  const isVoice = interaction?.channel === InteractionChannel.CALL;
+  const showAudioPlayer = isVoice && isPresent(voiceLogUrl);
   const showChatTranscript = isPresent(chatTranscriptUrl);
+  const transcriptLocked = isVoice;
+  const activeTab = transcriptLocked && tab === 'transcript' ? 'overview' : tab;
 
   useEffect(() => {
     if (!showAudioPlayer || !voiceLogUrl) {
@@ -187,19 +191,37 @@ const InteractionPreviewPanel = ({ interactionId }: InteractionPreviewPanelProps
         )
       ) : null}
       <Tabs
-        value={tab}
+        value={activeTab}
         onChange={(_: SyntheticEvent, value: string | number) => setTab(value as PreviewTab)}
         tabStyle="button"
         variant="fullWidth"
       >
-        <Tab label={t('rightPanelTabTranscript')} value="transcript" />
+        <Tab
+          value="transcript"
+          disabled={transcriptLocked}
+          // The card opens from the tab itself, so the disabled tab still has
+          // to receive pointer events.
+          sx={transcriptLocked ? { '&.Mui-disabled': { pointerEvents: 'auto' } } : undefined}
+          label={
+            transcriptLocked ? (
+              <AiTranscriptPromo>
+                <Box display="flex" alignItems="center" gap={0.5}>
+                  {t('rightPanelTabTranscript')}
+                  <Icon name="magic-wand" size="sm" />
+                </Box>
+              </AiTranscriptPromo>
+            ) : (
+              t('rightPanelTabTranscript')
+            )
+          }
+        />
         <Tab label={t('rightPanelTabOverview')} value="overview" />
         <Tab label={t('rightPanelTabTimeline')} value="timeline" />
       </Tabs>
 
-      {tab === 'overview' ? (
+      {activeTab === 'overview' ? (
         interaction ? <InteractionOverview interaction={interaction} /> : null
-      ) : tab === 'timeline' ? (
+      ) : activeTab === 'timeline' ? (
         ccId != null && processId != null ? (
           <InteractionTimeline
             ccId={ccId}
