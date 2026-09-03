@@ -7,7 +7,8 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 import noHardcodedColors from './eslint-plugins/no-hardcoded-colors.js'
 
 export default defineConfig([
-  globalIgnores(['dist', 'src/boilerplate']),
+  // `mockServiceWorker.js` is emitted verbatim by `msw init`.
+  globalIgnores(['dist', 'src/boilerplate', 'public/mockServiceWorker.js']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -55,6 +56,16 @@ export default defineConfig([
           ],
         },
       ],
+    },
+  },
+  {
+    // The `dev:mock` scenario switcher is dev-only scaffolding that sits on top
+    // of the app under test. It is styled with its own literal colours on
+    // purpose: reaching into the product theme would make the harness change
+    // appearance with the thing it is being used to inspect.
+    files: ['src/test/**/*.{ts,tsx}'],
+    rules: {
+      'custom-colors/no-hardcoded-colors': 'off',
     },
   },
 ])
