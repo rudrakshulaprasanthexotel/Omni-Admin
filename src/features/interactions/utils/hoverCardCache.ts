@@ -13,6 +13,15 @@ function bucket(name: string): Map<string, CacheEntry<unknown>> {
   return created;
 }
 
+/**
+ * Drops every cached bucket. The cache is module-scoped and lives for the
+ * session, so tests need a way to stop one case's fetches leaking into the
+ * next. Not used by application code.
+ */
+export function resetHoverCardCache(): void {
+  caches.clear();
+}
+
 export function loadCached<T>(name: string, key: string, load: () => Promise<T>): Promise<T> {
   const store = bucket(name);
   const existing = store.get(key) as CacheEntry<T> | undefined;
