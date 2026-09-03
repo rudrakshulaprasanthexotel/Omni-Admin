@@ -2,12 +2,13 @@ import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import AmeyoLogger from '@/services/ameyoLogger/logger';
 import type { RootState } from '@/store';
-import { refreshToken } from '@/features/auth/asyncActions';
+import { logout, refreshToken } from '@/features/auth/asyncActions';
 import { clearLoginResponse } from '@/features/auth/authSlice';
 import type { Store } from '@reduxjs/toolkit';
 
 const logger = AmeyoLogger.get('ApiClient');
 
+let storeRef: Store<RootState> | null = null;
 
 const apiClient: AxiosInstance = axios.create({
   timeout: 30_000,
@@ -16,6 +17,7 @@ const apiClient: AxiosInstance = axios.create({
 
 const REFRESH_TOKEN_URL = '/ameyorestapi/session/refreshToken';
 const LOGIN_URL = '/ameyorestapi/userLogin/login';
+const LOGOUT_URL = '/ameyorestapi/session/userLogout';
 
 // Single-flight refresh: concurrent 401s share one refresh call.
 let refreshPromise: Promise<string> | null = null;
@@ -26,7 +28,23 @@ async function refreshAuthToken(store: Store<RootState>): Promise<string> {
   return result.jwtToken;
 }
 
+async function endExpiredSession(store: Store<RootState>): Promise<void> {
+  const sessionId =
+    store.getState()?.auth?.loginResponse?.userSessionInfo?.sessionId ?? '';
+
+  if (sessionId) {
+    await store.dispatch(logout({ sessionId, reason: 'session_expired' }) as any);
+  }
+
+  store.dispatch(clearLoginResponse());
+}
+
+export function getRootState(): RootState | undefined {
+  return storeRef?.getState();
+}
+
 export function setupApiClientInterceptors(store: Store<RootState>): void {
+  storeRef = store;
   apiClient.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
       logger.debug('Request:', config.method?.toUpperCase(), config.url);
@@ -48,6 +66,7 @@ export function setupApiClientInterceptors(store: Store<RootState>): void {
       const status = error.response?.status;
       const isRefreshCall = originalRequest?.url?.includes(REFRESH_TOKEN_URL);
       const isLoginCall = originalRequest?.url?.includes(LOGIN_URL);
+      const isLogoutCall = originalRequest?.url?.includes(LOGOUT_URL);
       const hasSession = Boolean(store.getState()?.auth?.loginResponse?.userSessionInfo?.sessionId);
   
       if (
@@ -56,6 +75,7 @@ export function setupApiClientInterceptors(store: Store<RootState>): void {
         !originalRequest._retry &&
         !isRefreshCall &&
         !isLoginCall &&
+        !isLogoutCall &&
         hasSession
       ) {
         originalRequest._retry = true;
@@ -75,8 +95,8 @@ export function setupApiClientInterceptors(store: Store<RootState>): void {
           return apiClient(originalRequest);
         } catch (refreshError) {
           refreshPromise = null;
-          store.dispatch(clearLoginResponse());
           logger.error('Token refresh failed:', refreshError);
+          await endExpiredSession(store);
           return Promise.reject(refreshError);
         }
       }
@@ -99,6 +119,10 @@ export function setSessionId(sessionId: string): void {
 
 export function setAuthorizationHeader(bearerToken: string): void {
   apiClient.defaults.headers.common['Authorization'] = bearerToken;
+}
+
+export function setAccountIdHeader(accountId: string): void {
+  apiClient.defaults.headers.common['accountid'] = accountId;
 }
 
 export { apiClient };

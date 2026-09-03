@@ -2,20 +2,12 @@ import { Box, Typography, Button } from '@exotel-npm-dev/signal-design-system';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/store/hooks';
 import { selectLoginResponse } from '../authSlice';
-
-function getDefaultRoute(userType: string): string {
-  const routeMap: Record<string, string> = {
-    admin: '/dashboard',
-    supervisor: '/dashboard',
-  };
-  return routeMap[userType.toLowerCase()] ?? '/login';
-}
+import { getHomeRouteForUser } from '../utils';
 
 export function AccessDeniedPage() {
   const navigate = useNavigate();
   const loginResponse = useAppSelector(selectLoginResponse);
-  const userType = loginResponse?.userSessionInfo?.userType ?? 'admin';
-  const homeRoute = getDefaultRoute(userType);
+  const homeRoute = getHomeRouteForUser(loginResponse?.userSessionInfo?.userType);
 
   return (
     <Box

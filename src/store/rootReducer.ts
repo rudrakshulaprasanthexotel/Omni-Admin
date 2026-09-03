@@ -2,6 +2,8 @@ import { persistReducer } from "redux-persist";
 import type { WebStorage } from "redux-persist/lib/types";
 import authReducer from "../features/auth/authSlice";
 import processReducer from "../features/process/processSlice";
+import interactionsReducer from "../features/interactions/interactionsSlice";
+import rightPanelReducer from "../layouts/rightPanel/rightPanelSlice";
 
 // Custom localStorage adapter. Avoids redux-persist's default storage import,
 // which doesn't unwrap correctly under Vite's ESM interop
@@ -19,5 +21,7 @@ const authPersistConfig = {
 
 export const rootReducer = {
   auth: persistReducer(authPersistConfig, authReducer),
-  process: processReducer
+  process: processReducer,
+  interactions: interactionsReducer,
+  rightPanel: rightPanelReducer,
 };

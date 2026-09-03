@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "signal-storybook": {
+      "url": "https://main--69ba4becb6eabba83cbd8bc1.chromatic.com/mcp"
+    },
+    "figma": {
+      "url": "https://mcp.figma.com/mcp"
+    }
+  }
+}

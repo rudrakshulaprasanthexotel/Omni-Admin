@@ -1,15 +1,8 @@
 import { Navigation, type NavItemPayload, type NavSectionProps } from "@exotel-npm-dev/signal-design-system";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAppSelector } from "@/store/hooks";
 import { selectLoginResponse } from "@/features/auth/authSlice";
-
-const adminNavigationSections: NavSectionProps[] = [
-  {
-    items: [
-      { id: 'process', label: 'Process', iconName: 'gear-fine', path: '/process' },
-    ]
-  }
-]
+import { UserType } from "@/features/auth/types";
 
 /** Full admin nav — restore when those routes ship */
 export const dummyAdminNavigationSections: NavSectionProps[] = [
@@ -31,7 +24,6 @@ export const dummyAdminNavigationSections: NavSectionProps[] = [
   {
     label: 'Preferences',
     items: [
-      { id: 'settings', label: 'Settings', iconName: 'gear', path: '/settings' },
       { id: 'help', label: 'Help', iconName: 'question', path: '/help' },
     ],
   },
@@ -39,28 +31,19 @@ export const dummyAdminNavigationSections: NavSectionProps[] = [
 
 const supervisorNavigationSections: NavSectionProps[] = [
   {
-    label: 'Main',
     items: [
-      { id: 'dashboard', label: 'Dashboard', iconName: 'house', path: '/dashboard', openNewPage: false },
-      { id: 'monitoring', label: 'Live Monitoring', iconName: 'chart-bar', path: '/monitoring', openNewPage: false },
-      { id: 'team', label: 'Team Performance', iconName: 'users', path: '/team', openNewPage: false },
-    ],
-  },
-  {
-    label: 'Preferences',
-    items: [
-      { id: 'settings', label: 'Settings', iconName: 'gear', path: '/settings', openNewPage: false },
-      { id: 'help', label: 'Help', iconName: 'question', path: '/help', openNewPage: false },
+      { id: 'interactions', label: 'Interaction Details', iconName: 'chart-bar', path: '/interactions' },
     ],
   },
 ];
 
 const LeftSidebar = () => {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const loginResponse = useAppSelector(selectLoginResponse);
-  const userType = loginResponse?.userSessionInfo?.userType?.toLowerCase() ?? '';
+  const userType = loginResponse?.userSessionInfo?.userType ?? '';
 
-  const navigationSections = userType === 'supervisor'
+  const navigationSections = userType === UserType.SUPERVISOR
     ? supervisorNavigationSections
     : dummyAdminNavigationSections;
 
@@ -69,7 +52,11 @@ const LeftSidebar = () => {
   };
 
   return (
-    <Navigation onNavigate={handleNavigate} items={navigationSections} />
+    <Navigation
+      initialPath={pathname}
+      onNavigate={handleNavigate}
+      items={navigationSections}
+    />
   );
 };
 

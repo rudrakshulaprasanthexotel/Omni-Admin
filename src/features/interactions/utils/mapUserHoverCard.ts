@@ -1,0 +1,55 @@
+import type { TFunction } from 'i18next';
+import type { HoverCardData, HoverCardDetail } from '@exotel-npm-dev/signal-design-system';
+import { displayValue } from './formatInteraction';
+
+interface MapUserHoverCardArgs {
+  name: string;
+  userId?: string;
+  userType?: string;
+  userName?: string;
+  systemUserType?: string;
+  campaigns: Array<{ id: number; name: string }>;
+  t: TFunction;
+}
+
+export function mapUserHoverCard({
+  name,
+  userId,
+  userType,
+  userName,
+  systemUserType,
+  campaigns,
+  t,
+}: MapUserHoverCardArgs): HoverCardData {
+  const details: HoverCardDetail[] = [
+    { id: 'userType', label: t('hoverCardUserType'), value: displayValue(userType) },
+    {
+      id: 'systemUserType',
+      label: t('hoverCardSystemUserType'),
+      value: displayValue(systemUserType),
+    },
+  ];
+
+  return {
+    variant: 'user',
+    title: userName ?? name,
+    subtitle: userId ? (userId.startsWith('@') ? userId : `@${userId}`) : undefined,
+    action: {
+      label: t('hoverCardDetailedView'),
+    },
+    details,
+    sections:
+      campaigns.length > 0
+        ? [
+            {
+              id: 'campaigns',
+              title: t('hoverCardCampaigns', { count: campaigns.length }),
+              items: campaigns.map((campaign) => ({
+                id: String(campaign.id),
+                label: campaign.name,
+              })),
+            },
+          ]
+        : undefined,
+  };
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Use Signal Design System"
+  short_description: "Implement UI with approved Signal primitives"
+  default_prompt: "Use $use-signal-design-system to implement this design with approved components."

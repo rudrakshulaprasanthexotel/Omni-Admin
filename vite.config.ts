@@ -19,6 +19,26 @@ export default defineConfig(({ mode }) => {
       changeOrigin: true,
       secure: false,
     },
+    [env.VITE_DATA_ENGINE_API_BASE_PATH]: {
+      target: env.VITE_API_BASE_URL,
+      changeOrigin: true,
+      secure: false,
+    },
+    [env.VITE_CQA_API_BASE_PATH || '/cqa']: {
+      target: env.VITE_API_BASE_URL,
+      changeOrigin: true,
+      secure: false,
+    },
+    '/interaction-svc': {
+      target: env.VITE_API_BASE_URL,
+      changeOrigin: true,
+      secure: false,
+    },
+    '/cms/cc': {
+      target: env.VITE_API_BASE_URL,
+      changeOrigin: true,
+      secure: false,
+    },
   };
 
   return {

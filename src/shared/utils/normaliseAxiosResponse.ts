@@ -1,4 +1,4 @@
-import { AxiosError, type AxiosResponse } from 'axios';
+import { AxiosError, AxiosHeaders, type AxiosResponse, type RawAxiosHeaders } from 'axios';
 
 interface NormalisedRequestInfo {
   url: string | undefined;
@@ -25,6 +25,11 @@ export interface NormalisedAxiosResponse<D = any> {
 
 type NormaliseType = 'success' | 'error';
 
+function toPlainHeaders(headers: unknown): Record<string, string> | undefined {
+  if (!headers || typeof headers !== 'object') return undefined;
+  return AxiosHeaders.from(headers as RawAxiosHeaders).toJSON(true) as Record<string, string>;
+}
+
 function normaliseSuccess<D = any>(response: AxiosResponse<D>): NormalisedAxiosResponse<D> {
   return {
     isSuccess: true,
@@ -33,14 +38,14 @@ function normaliseSuccess<D = any>(response: AxiosResponse<D>): NormalisedAxiosR
     request: {
       url: response.config?.url,
       method: response.config?.method,
-      headers: response.config?.headers as Record<string, string> | undefined,
+      headers: toPlainHeaders(response.config?.headers),
       params: response.config?.params,
       data: response.config?.data,
     },
     response: {
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers as Record<string, string> | undefined,
+      headers: toPlainHeaders(response.headers),
       data: response.data,
     },
   };
@@ -54,14 +59,14 @@ function normaliseError(error: AxiosError): NormalisedAxiosResponse {
     request: {
       url: error.config?.url,
       method: error.config?.method,
-      headers: error.config?.headers as Record<string, string> | undefined,
+      headers: toPlainHeaders(error.config?.headers),
       params: error.config?.params,
       data: error.config?.data,
     },
     response: {
       status: error.response?.status,
       statusText: error.response?.statusText,
-      headers: error.response?.headers as Record<string, string> | undefined,
+      headers: toPlainHeaders(error.response?.headers),
       data: error.response?.data,
     },
   };

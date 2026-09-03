@@ -1,0 +1,4 @@
+interface:
+  display_name: "Use UX Guidelines"
+  short_description: "Apply cross-cutting supervisor UX patterns"
+  default_prompt: "Use $use-ux-guidelines to implement or review this UI against cross-cutting UX decisions."
