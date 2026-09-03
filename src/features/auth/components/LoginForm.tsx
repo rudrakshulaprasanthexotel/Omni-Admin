@@ -1,14 +1,14 @@
 import { useState, type ChangeEvent, type SubmitEvent } from 'react';
 import { Box, FormField, Button, IconButton, Icon, Typography, useToast } from '@exotel-npm-dev/signal-design-system';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { useAppDispatch } from '@/store/hooks';
 import { useNavigate } from 'react-router-dom';
-import { login, logout } from '../asyncActions';
-import { clearLoginResponse, selectLoginError, selectLoginLoading } from '../authSlice';
+import { useLogin, useLogout } from '../mutations';
+import { clearLoginResponse } from '../authSlice';
 import { ALLOWED_ROLES, LOGIN_ERROR_CODE } from '../constants';
 import { getHomeRouteForUser } from '../utils';
 import { ForceLoginDialog } from './ForceLoginDialog';
 import { useTranslation } from 'react-i18next';
-import type { NormalisedAxiosResponse } from '@/shared/utils/normaliseAxiosResponse';
+import { getApiErrorData } from '@/shared/utils/apiError';
 import type { ILoginApiErrorData } from '../types';
 
 export function LoginForm() {
@@ -16,41 +16,39 @@ export function LoginForm() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { showWarning } = useToast();
-  const loginLoading = useAppSelector(selectLoginLoading);
-  const loginError = useAppSelector(selectLoginError);
+  const login = useLogin();
+  const logout = useLogout();
 
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showForceLogin, setShowForceLogin] = useState(false);
 
-  const attemptLogin = async (forceLogin: boolean) => {
-    const result = await dispatch(
-      login({
-        userId,
-        token: password,
-        domain: window.location.hostname,
-        forceLogin,
-      }),
-    ).unwrap();
+  const loginLoading = login.isPending;
 
-    const loginData = result.response?.data;
+  const attemptLogin = async (forceLogin: boolean) => {
+    const loginData = await login.mutateAsync({
+      userId,
+      token: password,
+      domain: window.location.hostname,
+      forceLogin,
+    });
 
     // Only allowed roles can use this interface; surface a notice and drop the
     // session instead of routing unsupported roles into the app.
-    const userType = loginData?.userSessionInfo?.userType;
+    const userType = loginData.userSessionInfo?.userType;
     if (!userType || !ALLOWED_ROLES.includes(userType)) {
       showWarning(t('roleNotSupported'));
-      const sessionId = loginData?.userSessionInfo?.sessionId;
+      const sessionId = loginData.userSessionInfo?.sessionId;
       if (sessionId) {
-        await dispatch(logout({ sessionId, reason: 'role_not_allowed' }));
+        await logout.mutateAsync({ sessionId, reason: 'role_not_allowed' }).catch(() => undefined);
+      } else {
+        dispatch(clearLoginResponse());
       }
-      dispatch(clearLoginResponse());
-      return result;
+      return;
     }
 
     navigate(getHomeRouteForUser(userType), { replace: true });
-    return result;
   };
 
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
@@ -60,8 +58,7 @@ export function LoginForm() {
     try {
       await attemptLogin(false);
     } catch (error: unknown) {
-      const normalisedError = error as NormalisedAxiosResponse;
-      const errorData = normalisedError?.response?.data as ILoginApiErrorData | undefined;
+      const errorData = getApiErrorData<ILoginApiErrorData>(error);
       if (errorData?.errorCode === LOGIN_ERROR_CODE.FORCE_LOGIN_ERROR_CODE) {
         setShowForceLogin(true);
       }
@@ -69,12 +66,8 @@ export function LoginForm() {
   };
 
   const handleForceLogin = async () => {
-    try {
-      await attemptLogin(true);
-      setShowForceLogin(false);
-    } catch {
-      setShowForceLogin(false);
-    }
+    await attemptLogin(true).catch(() => undefined);
+    setShowForceLogin(false);
   };
 
   return (
@@ -128,7 +121,7 @@ export function LoginForm() {
           {t('signIn')}
         </Button>
 
-        {loginError && !showForceLogin && (
+        {login.isError && !showForceLogin && (
           <Typography variant="body2" color="error" sx={{ mt: 1, textAlign: 'center' }}>
             {t('signInError')}
           </Typography>

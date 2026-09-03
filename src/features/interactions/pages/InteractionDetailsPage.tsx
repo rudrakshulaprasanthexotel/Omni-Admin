@@ -26,32 +26,26 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import type { CampaignUserResponse, QueueDetailBean } from '@/boilerplate/cmsApis/models';
 import type { DispositionCodeBean } from '@/services/apiClient/supervisorApis';
 import { selectContactCenterId } from '@/features/auth/authSlice';
-import { fetchAssignedProcesses } from '@/features/process/asyncActions';
 import {
+  fetchAssignedCampaigns,
+  fetchAssignedProcesses,
+} from '@/features/process/asyncActions';
+import {
+  selectAssignedCampaigns,
+  selectAssignedCampaignsLoaded,
+  selectAssignedCampaignsLoading,
   selectAssignedProcesses,
   selectAssignedProcessesLoaded,
   selectAssignedProcessesLoading,
 } from '@/features/process/processSlice';
+import type { InteractionsFilters } from '../api';
 import {
-  fetchAssignedCampaigns,
-  fetchCampaignDispositions,
-  fetchCampaignQueues,
-  fetchCampaignUsers,
-  fetchInteractions,
-  type FetchInteractionsArgs,
-} from '../asyncActions';
-import {
-  clearInteractions,
-  selectInteractionRows,
-  selectInteractionsAfterCursor,
-  selectInteractionsBeforeCursor,
-  selectInteractionsCampaigns,
-  selectInteractionsCampaignsLoading,
-  selectInteractionsError,
-  selectInteractionsLoading,
-  selectInteractionsTotalRows,
-  selectQaDenominatorByCampaignId,
-} from '../interactionsSlice';
+  useCampaignDispositions,
+  useCampaignQaDenominator,
+  useCampaignQueues,
+  useCampaignUsers,
+  useInteractions,
+} from '../queries';
 import {
   InteractionChannel,
   InteractionChannelType,
@@ -286,19 +280,9 @@ export function Component() {
   const selectedProcessId = Number.isFinite(parsedProcessId) ? parsedProcessId : null;
 
   const contactCenterId = useAppSelector(selectContactCenterId);
-  const interactionRows = useAppSelector(selectInteractionRows);
-  const qaDenominatorByCampaignId = useAppSelector(selectQaDenominatorByCampaignId);
-  const rows = useMemo(
-    () => mapInteractionRows(interactionRows, qaDenominatorByCampaignId),
-    [interactionRows, qaDenominatorByCampaignId],
-  );
-  const loading = useAppSelector(selectInteractionsLoading);
-  const fetchError = useAppSelector(selectInteractionsError);
-  const totalRows = useAppSelector(selectInteractionsTotalRows);
-  const beforeCursor = useAppSelector(selectInteractionsBeforeCursor);
-  const afterCursor = useAppSelector(selectInteractionsAfterCursor);
-  const campaigns = useAppSelector(selectInteractionsCampaigns);
-  const campaignsLoading = useAppSelector(selectInteractionsCampaignsLoading);
+  const campaigns = useAppSelector(selectAssignedCampaigns);
+  const campaignsLoading = useAppSelector(selectAssignedCampaignsLoading);
+  const campaignsLoaded = useAppSelector(selectAssignedCampaignsLoaded);
   const processes = useAppSelector(selectAssignedProcesses);
   const processesLoading = useAppSelector(selectAssignedProcessesLoading);
   const processesLoaded = useAppSelector(selectAssignedProcessesLoaded);
@@ -351,11 +335,18 @@ export function Component() {
   const selectedUserIds = searchParams.getAll(USER_PARAM);
   const searchQuery = searchParams.get(SEARCH_PARAM) ?? '';
 
-  const [queues, setQueues] = useState<QueueDetailBean[]>([]);
-  const [dispositions, setDispositions] = useState<DispositionCodeBean[]>([]);
-  const [users, setUsers] = useState<CampaignUserResponse[]>([]);
   const [searchInput, setSearchInput] = useState(searchQuery);
   const [campaignSearch, setCampaignSearch] = useState('');
+
+  const campaignScope = {
+    contactCenterId: resolvedCcId,
+    processId,
+    campaignId,
+  };
+  const { data: queues = [] } = useCampaignQueues(campaignId);
+  const { data: dispositions = [] } = useCampaignDispositions(campaignId);
+  const { data: users = [] } = useCampaignUsers(campaignScope);
+  const { data: qaDenominator } = useCampaignQaDenominator(campaignScope);
 
   const updateParams = (mutate: (params: URLSearchParams) => void) => {
     setSearchParams(
@@ -378,9 +369,6 @@ export function Component() {
   if (prevCampaignId !== campaignId) {
     setPrevCampaignId(campaignId);
     setSearchInput(searchQuery);
-    setQueues([]);
-    setDispositions([]);
-    setUsers([]);
   }
 
   useEffect(() => {
@@ -402,23 +390,17 @@ export function Component() {
     return () => clearTimeout(timer);
   }, [searchInput, searchQuery, setSearchParams]);
 
-  useEffect(() => {
-    if (campaigns.length === 0) {
-      dispatch(fetchAssignedCampaigns());
-    }
-  }, [dispatch, campaigns.length]);
-
-  // Drops the loaded interactions when the user navigates to another screen.
-  useEffect(() => () => {
-    dispatch(clearInteractions());
-  }, [dispatch]);
-
-  // Normally already loaded by `useSessionBootstrap`; this covers a hard reload
-  // straight onto /interactions before the bootstrap thunk settles.
+  // Normally already loaded by `useSessionBootstrap`; these cover a hard reload
+  // straight onto /interactions before the bootstrap thunks settle.
   useEffect(() => {
     if (processesLoaded || processesLoading) return;
     dispatch(fetchAssignedProcesses());
   }, [dispatch, processesLoaded, processesLoading]);
+
+  useEffect(() => {
+    if (campaignsLoaded || campaignsLoading) return;
+    dispatch(fetchAssignedCampaigns());
+  }, [dispatch, campaignsLoaded, campaignsLoading]);
 
   useEffect(() => {
     if (firstProcessId === null) return;
@@ -449,71 +431,9 @@ export function Component() {
     );
   }, [firstCampaignIdInProcess, isCampaignInProcess, setSearchParams]);
 
-  useEffect(() => {
-    if (campaignId === null) return;
-
-    let cancelled = false;
-    void (async () => {
-      try {
-        const result = await dispatch(fetchCampaignQueues(campaignId)).unwrap();
-        if (!cancelled) setQueues(result.response?.data ?? []);
-      } catch {
-        if (!cancelled) setQueues([]);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [dispatch, campaignId]);
-
-  useEffect(() => {
-    if (campaignId === null) return;
-
-    let cancelled = false;
-    void (async () => {
-      try {
-        const result = await dispatch(fetchCampaignDispositions(campaignId)).unwrap();
-        if (!cancelled) setDispositions(result.response?.data ?? []);
-      } catch {
-        if (!cancelled) setDispositions([]);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [dispatch, campaignId]);
-
-  useEffect(() => {
-    if (campaignId === null) return;
-    if (resolvedCcId === undefined || processId === undefined) return;
-
-    let cancelled = false;
-    void (async () => {
-      try {
-        const result = await dispatch(
-          fetchCampaignUsers({
-            contactCenterId: resolvedCcId,
-            processId,
-            campaignId,
-          }),
-        ).unwrap();
-        // @ts-ignore Swagger response and API response are different
-        if (!cancelled) setUsers((result.response?.data?.response ?? []).map(d => d?.data));
-      } catch {
-        if (!cancelled) setUsers([]);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [dispatch, campaignId, resolvedCcId, processId]);
-
-  let fetchArgs: FetchInteractionsArgs | null = null;
+  let filters: InteractionsFilters | null = null;
   if (campaignId !== null && resolvedCcId !== undefined && processId !== undefined) {
-    fetchArgs = {
+    filters = {
       ccId: resolvedCcId,
       processId,
       campaignIds: [campaignId],
@@ -529,13 +449,15 @@ export function Component() {
     };
   }
 
-  const fetchArgsKey = JSON.stringify(fetchArgs);
+  const { data: interactionsPage, isFetching, isError, refetch } = useInteractions(filters);
 
-  useEffect(() => {
-    const args = JSON.parse(fetchArgsKey) as FetchInteractionsArgs | null;
-    if (args === null) return;
-    dispatch(fetchInteractions(args));
-  }, [dispatch, fetchArgsKey]);
+  const rows = mapInteractionRows(
+    interactionsPage?.rows ?? [],
+    campaignId !== null && qaDenominator != null ? { [campaignId]: qaDenominator } : {},
+  );
+  const totalRows = interactionsPage?.totalRows ?? -1;
+  const beforeCursor = interactionsPage?.beforeCursor ?? null;
+  const afterCursor = interactionsPage?.afterCursor ?? null;
 
   const channelOptions = toMultiSelectOptions([...CHANNEL_TYPE_FILTER]);
 
@@ -916,8 +838,7 @@ export function Component() {
   );
 
   const handleRefresh = () => {
-    if (fetchArgs === null) return;
-    dispatch(fetchInteractions(fetchArgs));
+    void refetch();
   };
 
   const handlePaginationModelChange = (nextModel: PaginationModel) => {
@@ -962,7 +883,7 @@ export function Component() {
 
   const emptyStateMessage = campaignId === null
     ? t('interactionsSelectCampaign')
-    : fetchError
+    : isError
       ? t('interactionsLoadError')
       : t('interactionsEmptyState');
 
@@ -982,7 +903,7 @@ export function Component() {
         rows={rows}
         getRowId={(row: Interaction) => row.uniqueId}
         columns={columns}
-        loading={loading}
+        loading={isFetching}
         tableHeader={tableHeader}
         customToolbarFilters={customToolbarFilters}
         consolidatedFilter={consolidatedFilter}

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import {
   Box,
   Button,
@@ -7,10 +7,9 @@ import {
   MenuItem,
 } from '@exotel-npm-dev/signal-design-system';
 import { useTranslation } from 'react-i18next';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { useAppSelector } from '@/store/hooks';
 import { selectContactCenterId } from '@/features/auth/authSlice';
-import { createProcess, getAllTableDefinitions } from '../asyncActions';
-import { selectCreateProcessLoading, selectGetTableDefinitionsLoading, selectTableDefinitions } from '../processSlice';
+import { useCreateProcess, useTableDefinitions } from '../queries';
 import type { CreateProcessFormValues } from '../types';
 import LoadingOverlay from '@/shared/components/feedback/LoadingOverlay';
 
@@ -27,11 +26,11 @@ const EMPTY_FORM: CreateProcessFormValues = {
 
 const CreateProcessDrawer = ({ open, onClose }: CreateProcessDrawerProps) => {
   const { t } = useTranslation();
-  const dispatch = useAppDispatch();
   const contactCenterId = useAppSelector(selectContactCenterId);
-  const loading = useAppSelector(selectCreateProcessLoading);
-  const tableDefinitionsLoading = useAppSelector(selectGetTableDefinitionsLoading);
-  const tableDefinitions = useAppSelector(selectTableDefinitions);
+  const createProcess = useCreateProcess();
+  const { data: tableDefinitions = [], isLoading: tableDefinitionsLoading } =
+    useTableDefinitions(open);
+  const loading = createProcess.isPending;
 
   const [values, setValues] = useState<CreateProcessFormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof CreateProcessFormValues, string>>>({});
@@ -41,12 +40,6 @@ const CreateProcessDrawer = ({ open, onClose }: CreateProcessDrawerProps) => {
     setErrors({});
     onClose();
   };
-
-  useEffect(() => {
-    if (!open) return;
-
-    dispatch(getAllTableDefinitions());
-  }, [open]);
 
   const updateField = <K extends keyof CreateProcessFormValues>(
     field: K,
@@ -66,23 +59,19 @@ const CreateProcessDrawer = ({ open, onClose }: CreateProcessDrawerProps) => {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!validate()) return;
     if (contactCenterId == null) return;
 
-    try {
-      await dispatch(
-        createProcess({
-          contactCenterId,
-          processName: values.processName.trim(),
-          description: values.description.trim() || undefined,
-          tableDefinitionId: values.tableDefinitionId as number,
-        }),
-      ).unwrap();
-      handleClose();
-    } catch {
-      // error is handled in the slice
-    }
+    createProcess.mutate(
+      {
+        contactCenterId,
+        processName: values.processName.trim(),
+        description: values.description.trim() || undefined,
+        tableDefinitionId: values.tableDefinitionId as number,
+      },
+      { onSuccess: handleClose },
+    );
   };
 
   return (

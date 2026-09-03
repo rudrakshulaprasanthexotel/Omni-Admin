@@ -2,8 +2,8 @@ import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import AmeyoLogger from '@/services/ameyoLogger/logger';
 import type { RootState } from '@/store';
-import { logout, refreshToken } from '@/features/auth/asyncActions';
-import { clearLoginResponse } from '@/features/auth/authSlice';
+import { logoutRequest, refreshTokenRequest } from '@/features/auth/api';
+import { clearLoginResponse, setJwt } from '@/features/auth/authSlice';
 import type { Store } from '@reduxjs/toolkit';
 
 const logger = AmeyoLogger.get('ApiClient');
@@ -24,8 +24,9 @@ let refreshPromise: Promise<string> | null = null;
 
 async function refreshAuthToken(store: Store<RootState>): Promise<string> {
   const userId = store.getState()?.auth?.loginResponse?.userSessionInfo?.userId ?? '';
-  const result = await store.dispatch(refreshToken({ userId }) as any).unwrap();
-  return result.jwtToken;
+  const jwtToken = await refreshTokenRequest({ userId });
+  store.dispatch(setJwt(jwtToken));
+  return jwtToken;
 }
 
 async function endExpiredSession(store: Store<RootState>): Promise<void> {
@@ -33,7 +34,7 @@ async function endExpiredSession(store: Store<RootState>): Promise<void> {
     store.getState()?.auth?.loginResponse?.userSessionInfo?.sessionId ?? '';
 
   if (sessionId) {
-    await store.dispatch(logout({ sessionId, reason: 'session_expired' }) as any);
+    await logoutRequest({ sessionId, reason: 'session_expired' }).catch(() => undefined);
   }
 
   store.dispatch(clearLoginResponse());

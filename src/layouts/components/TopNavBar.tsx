@@ -1,24 +1,25 @@
 import { useNavigate } from "react-router-dom";
 import { AppBar, useThemeMode } from "@exotel-npm-dev/signal-design-system";
 import { BRAND_LOGO_URL } from "@/configs/constants";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { selectLoginResponse, clearLoginResponse } from "@/features/auth/authSlice";
-import { logout } from "@/features/auth/asyncActions";
+import { useAppSelector } from "@/store/hooks";
+import { selectLoginResponse } from "@/features/auth/authSlice";
+import { useLogout } from "@/features/auth/mutations";
 
 const TopNavBar = () => {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const loginResponse = useAppSelector(selectLoginResponse);
+  const logout = useLogout();
   const { setMode, mode } = useThemeMode();
 
   const userName = loginResponse?.userSessionInfo?.userName ?? "User";
 
   const handleLogout = async () => {
-    await dispatch(logout({
-      sessionId: loginResponse?.userSessionInfo?.sessionId ?? "",
-      reason: "User logged out",
-    }))
-    dispatch(clearLoginResponse());
+    await logout
+      .mutateAsync({
+        sessionId: loginResponse?.userSessionInfo?.sessionId ?? "",
+        reason: "User logged out",
+      })
+      .catch(() => undefined);
     navigate("/login", { replace: true });
   };
 

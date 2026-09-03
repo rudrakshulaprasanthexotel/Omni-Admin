@@ -1,10 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import {
-  selectProcessList,
-  selectSelectedProcessId,
-  setSelectedProcessId,
-} from '../processSlice';
+import { selectSelectedProcessId, setSelectedProcessId } from '../processSlice';
+import { useProcessList } from '../queries';
 import { SecondaryNavigation, type NavigationItem } from '@exotel-npm-dev/signal-design-system';
 
 interface ProcessListPanelProps {
@@ -16,7 +13,7 @@ interface ProcessListPanelProps {
 const ProcessListPanel = ({ collapsed, onToggleCollapse, onCreateProcess }: ProcessListPanelProps) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const processList = useAppSelector(selectProcessList);
+  const { data: processList = [] } = useProcessList();
   const selectedProcessId = useAppSelector(selectSelectedProcessId);
 
   const items: NavigationItem[] = processList.map((process) => ({

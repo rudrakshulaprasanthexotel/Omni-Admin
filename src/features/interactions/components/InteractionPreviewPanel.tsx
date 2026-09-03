@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type SyntheticEvent } from 'react';
+import { useEffect, useState, type SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -14,37 +14,27 @@ import {
 import { selectContactCenterId } from '@/features/auth/authSlice';
 import { downloadBlob } from '@/shared/utils/downloadBlob';
 import { useAppSelector } from '@/store/hooks';
-import { selectInteractionRows, selectQaDenominatorByCampaignId } from '../interactionsSlice';
-import { InteractionChannel, type InteractionPreviewTab } from '../types';
+import { InteractionChannel, type Interaction, type InteractionPreviewTab } from '../types';
 import { isPresent } from '../utils/formatInteraction';
 import { mapChatTranscript, type ChatTranscriptMessage } from '../utils/mapChatTranscript';
-import { mapInteractionRows } from '../utils/mapInteraction';
 import AiTranscriptPromo from './AiTranscriptPromo';
 import InteractionChatTranscript from './InteractionChatTranscript';
 import InteractionOverview from './InteractionOverview';
 import InteractionTimeline from './InteractionTimeline';
 
 interface InteractionPreviewPanelProps {
-  interactionId: string;
+  interaction: Interaction;
   initialTab?: InteractionPreviewTab;
 }
 
 const InteractionPreviewPanel = ({
-  interactionId,
+  interaction,
   initialTab = 'overview',
 }: InteractionPreviewPanelProps) => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const interactionRows = useAppSelector(selectInteractionRows);
-  const qaDenominatorByCampaignId = useAppSelector(selectQaDenominatorByCampaignId);
   const sessionCcId = useAppSelector(selectContactCenterId);
-  const interaction = useMemo(
-    () =>
-      mapInteractionRows(interactionRows, qaDenominatorByCampaignId).find(
-        (row) => row.id === interactionId,
-      ),
-    [interactionRows, qaDenominatorByCampaignId, interactionId],
-  );
+  const interactionId = interaction.id;
   const [tab, setTab] = useState<InteractionPreviewTab>(initialTab);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [audioLoading, setAudioLoading] = useState(false);
@@ -55,16 +45,16 @@ const InteractionPreviewPanel = ({
   const [chatFailed, setChatFailed] = useState(false);
   const [chatRetry, setChatRetry] = useState(0);
   const processIdFromUrl = Number(searchParams.get('processId'));
-  const ccId = interaction?.contactCenterId ?? sessionCcId;
+  const ccId = interaction.contactCenterId ?? sessionCcId;
   const processId =
-    interaction?.processId ??
+    interaction.processId ??
     (Number.isFinite(processIdFromUrl) ? processIdFromUrl : undefined);
-  const voiceLogUrl = interaction?.voiceLogUrl;
-  const chatTranscriptUrl = interaction?.chatTranscriptUrl;
-  const customerName = interaction?.customer.name;
-  const userName = interaction?.user.name;
+  const voiceLogUrl = interaction.voiceLogUrl;
+  const chatTranscriptUrl = interaction.chatTranscriptUrl;
+  const customerName = interaction.customer.name;
+  const userName = interaction.user.name;
   const dataEngineBasePath = import.meta.env.VITE_DATA_ENGINE_API_BASE_PATH;
-  const isVoice = interaction?.channel === InteractionChannel.CALL;
+  const isVoice = interaction.channel === InteractionChannel.CALL;
   const showAudioPlayer = isVoice && isPresent(voiceLogUrl);
   const showChatTranscript = isPresent(chatTranscriptUrl);
   const transcriptLocked = isVoice;
@@ -222,7 +212,7 @@ const InteractionPreviewPanel = ({
       </Tabs>
 
       {activeTab === 'overview' ? (
-        interaction ? <InteractionOverview interaction={interaction} /> : null
+        <InteractionOverview interaction={interaction} />
       ) : activeTab === 'timeline' ? (
         ccId != null && processId != null ? (
           <InteractionTimeline
@@ -248,7 +238,7 @@ const InteractionPreviewPanel = ({
             {t('rightPanelRecordingRetry')}
           </Button>
         </Box>
-      ) : interaction && chatMessages.length > 0 ? (
+      ) : chatMessages.length > 0 ? (
         <InteractionChatTranscript messages={chatMessages} interaction={interaction} />
       ) : (
         <Typography variant="body2" color="text.secondary">

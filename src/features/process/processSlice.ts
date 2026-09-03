@@ -1,141 +1,43 @@
-import type { Campaign, Process, TableDefinition } from "@/boilerplate/cmsApis/models";
-import type { NormalisedAxiosResponse } from "@/shared/utils/normaliseAxiosResponse";
-import type { AssignedProcess } from "@/services/apiClient/supervisorApis";
+import type { AssignedCampaign, AssignedProcess } from "@/services/apiClient/supervisorApis";
 import { clearLoginResponse } from "@/features/auth/authSlice";
-import { createCampaign, createProcess, fetchAssignedProcesses, getAllTableDefinitions, getCampaignList, getProcessList } from "./asyncActions";
-import { createSlice } from "@reduxjs/toolkit";
+import { fetchAssignedCampaigns, fetchAssignedProcesses } from "./asyncActions";
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "@/store";
 
 interface ProcessState {
-  processList: Process[];
-  getProcessListLoading: boolean;
-  getProcessListError: NormalisedAxiosResponse | null;
   selectedProcessId: number | null;
-  createProcessLoading: boolean;
-  createProcessError: NormalisedAxiosResponse | null;
-  tableDefinitions: TableDefinition[];
-  getTableDefinitionsLoading: boolean;
-  getTableDefinitionsError: NormalisedAxiosResponse | null;
-  campaignList: Campaign[];
-  getCampaignListLoading: boolean;
-  getCampaignListError: NormalisedAxiosResponse | null;
-  createCampaignLoading: boolean;
-  createCampaignError: NormalisedAxiosResponse | null;
   assignedProcesses: AssignedProcess[];
   assignedProcessesLoading: boolean;
-  assignedProcessesError: NormalisedAxiosResponse | null;
+  assignedProcessesError: string | null;
   assignedProcessesLoaded: boolean;
+  assignedCampaigns: AssignedCampaign[];
+  assignedCampaignsLoading: boolean;
+  assignedCampaignsError: string | null;
+  assignedCampaignsLoaded: boolean;
 }
 
 const initialState: ProcessState = {
-  processList: [],
-  getProcessListLoading: false,
-  getProcessListError: null,
   selectedProcessId: null,
-  createProcessLoading: false,
-  createProcessError: null,
-  tableDefinitions: [],
-  getTableDefinitionsLoading: false,
-  getTableDefinitionsError: null,
-  campaignList: [],
-  getCampaignListLoading: false,
-  getCampaignListError: null,
-  createCampaignLoading: false,
-  createCampaignError: null,
   assignedProcesses: [],
   assignedProcessesLoading: false,
   assignedProcessesError: null,
   assignedProcessesLoaded: false,
+  assignedCampaigns: [],
+  assignedCampaignsLoading: false,
+  assignedCampaignsError: null,
+  assignedCampaignsLoaded: false,
 };
 
 const processSlice = createSlice({
   name: 'process',
   initialState,
   reducers: {
-    clearCreateProcessError(state) {
-      state.createProcessError = null;
-    },
-    clearCreateCampaignError(state) {
-      state.createCampaignError = null;
-    },
-    setSelectedProcessId(state, action: { payload: number | null }) {
+    setSelectedProcessId(state, action: PayloadAction<number | null>) {
       state.selectedProcessId = action.payload;
-      state.campaignList = [];
-      state.getCampaignListError = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getProcessList.pending, (state) => {
-        state.getProcessListLoading = true;
-        state.getProcessListError = null;
-      })
-      .addCase(getProcessList.fulfilled, (state, action) => {
-        state.getProcessListLoading = false;
-        state.processList = action.payload.response?.data ?? [];
-        if (state.selectedProcessId === null && state.processList.length > 0) {
-          state.selectedProcessId = state.processList[0].processId ?? null;
-        }
-      })
-      .addCase(getProcessList.rejected, (state, action) => {
-        state.getProcessListLoading = false;
-        state.getProcessListError = action.payload ?? null;
-      })
-      .addCase(createProcess.pending, (state) => {
-        state.createProcessLoading = true;
-        state.createProcessError = null;
-      })
-      .addCase(createProcess.fulfilled, (state, action) => {
-        state.createProcessLoading = false;
-        const created = action.payload.response?.data;
-        if (created) {
-          state.processList.push(created);
-          state.selectedProcessId = created.processId ?? state.selectedProcessId;
-        }
-      })
-      .addCase(createProcess.rejected, (state, action) => {
-        state.createProcessLoading = false;
-        state.createProcessError = action.payload ?? null;
-      })
-      .addCase(getAllTableDefinitions.pending, (state) => {
-        state.getTableDefinitionsLoading = true;
-        state.getTableDefinitionsError = null;
-      })
-      .addCase(getAllTableDefinitions.fulfilled, (state, action) => {
-        state.getTableDefinitionsLoading = false;
-        state.tableDefinitions = action.payload.response?.data ?? [];
-      })
-      .addCase(getAllTableDefinitions.rejected, (state, action) => {
-        state.getTableDefinitionsLoading = false;
-        state.getTableDefinitionsError = action.payload ?? null;
-      })
-      .addCase(getCampaignList.pending, (state) => {
-        state.getCampaignListLoading = true;
-        state.getCampaignListError = null;
-      })
-      .addCase(getCampaignList.fulfilled, (state, action) => {
-        state.getCampaignListLoading = false;
-        state.campaignList = action.payload.response?.data ?? [];
-      })
-      .addCase(getCampaignList.rejected, (state, action) => {
-        state.getCampaignListLoading = false;
-        state.getCampaignListError = action.payload ?? null;
-      })
-      .addCase(createCampaign.pending, (state) => {
-        state.createCampaignLoading = true;
-        state.createCampaignError = null;
-      })
-      .addCase(createCampaign.fulfilled, (state, action) => {
-        state.createCampaignLoading = false;
-        const created = action.payload.response?.data;
-        if (created) {
-          state.campaignList.push(created);
-        }
-      })
-      .addCase(createCampaign.rejected, (state, action) => {
-        state.createCampaignLoading = false;
-        state.createCampaignError = action.payload ?? null;
-      })
       .addCase(fetchAssignedProcesses.pending, (state) => {
         state.assignedProcessesLoading = true;
         state.assignedProcessesError = null;
@@ -143,40 +45,34 @@ const processSlice = createSlice({
       .addCase(fetchAssignedProcesses.fulfilled, (state, action) => {
         state.assignedProcessesLoading = false;
         state.assignedProcessesLoaded = true;
-        state.assignedProcesses = action.payload.response?.data ?? [];
+        state.assignedProcesses = action.payload;
       })
       .addCase(fetchAssignedProcesses.rejected, (state, action) => {
         state.assignedProcessesLoading = false;
         state.assignedProcessesLoaded = true;
-        state.assignedProcessesError = action.payload ?? null;
+        state.assignedProcessesError = action.payload ?? action.error.message ?? null;
       })
-      .addCase(clearLoginResponse, (state) => {
-        state.assignedProcesses = [];
-        state.assignedProcessesLoading = false;
-        state.assignedProcessesError = null;
-        state.assignedProcessesLoaded = false;
-      });
+      .addCase(fetchAssignedCampaigns.pending, (state) => {
+        state.assignedCampaignsLoading = true;
+        state.assignedCampaignsError = null;
+      })
+      .addCase(fetchAssignedCampaigns.fulfilled, (state, action) => {
+        state.assignedCampaignsLoading = false;
+        state.assignedCampaignsLoaded = true;
+        state.assignedCampaigns = action.payload;
+      })
+      .addCase(fetchAssignedCampaigns.rejected, (state, action) => {
+        state.assignedCampaignsLoading = false;
+        state.assignedCampaignsLoaded = true;
+        state.assignedCampaignsError = action.payload ?? action.error.message ?? null;
+      })
+      .addCase(clearLoginResponse, () => initialState);
   },
 });
 
-export const { clearCreateProcessError, clearCreateCampaignError, setSelectedProcessId } = processSlice.actions;
+export const { setSelectedProcessId } = processSlice.actions;
 
-export const selectProcessList = (state: RootState) => state.process.processList;
 export const selectSelectedProcessId = (state: RootState) => state.process.selectedProcessId;
-export const selectSelectedProcess = (state: RootState) =>
-  state.process.processList.find((p) => p.processId === state.process.selectedProcessId) ?? null;
-export const selectGetProcessListLoading = (state: RootState) => state.process.getProcessListLoading;
-export const selectCreateProcessLoading = (state: RootState) => state.process.createProcessLoading;
-export const selectCreateProcessError = (state: RootState) => state.process.createProcessError;
-export const selectTableDefinitions = (state: RootState) => state.process.tableDefinitions;
-export const selectGetTableDefinitionsLoading = (state: RootState) => state.process.getTableDefinitionsLoading;
-export const selectGetTableDefinitionsError = (state: RootState) => state.process.getTableDefinitionsError;
-
-export const selectCampaignList = (state: RootState) => state.process.campaignList;
-export const selectGetCampaignListLoading = (state: RootState) => state.process.getCampaignListLoading;
-export const selectGetCampaignListError = (state: RootState) => state.process.getCampaignListError;
-export const selectCreateCampaignLoading = (state: RootState) => state.process.createCampaignLoading;
-export const selectCreateCampaignError = (state: RootState) => state.process.createCampaignError;
 
 export const selectAssignedProcesses = (state: RootState) => state.process.assignedProcesses;
 export const selectAssignedProcessesLoading = (state: RootState) =>
@@ -185,5 +81,13 @@ export const selectAssignedProcessesError = (state: RootState) =>
   state.process.assignedProcessesError;
 export const selectAssignedProcessesLoaded = (state: RootState) =>
   state.process.assignedProcessesLoaded;
+
+export const selectAssignedCampaigns = (state: RootState) => state.process.assignedCampaigns;
+export const selectAssignedCampaignsLoading = (state: RootState) =>
+  state.process.assignedCampaignsLoading;
+export const selectAssignedCampaignsError = (state: RootState) =>
+  state.process.assignedCampaignsError;
+export const selectAssignedCampaignsLoaded = (state: RootState) =>
+  state.process.assignedCampaignsLoaded;
 
 export default processSlice.reducer;

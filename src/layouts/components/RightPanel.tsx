@@ -19,7 +19,7 @@ import InteractionPreviewPanel from '@/features/interactions/components/Interact
 const titleForAction = (action: RightPanelAction, t: TFunction) => {
   switch (action.type) {
     case RightPanelActionType.INTERACTION_PREVIEW:
-      return t('rightPanelInteractionTitle', { id: action.interactionId });
+      return t('rightPanelInteractionTitle', { id: action.interaction.id });
     default:
       return '';
   }
@@ -30,8 +30,8 @@ const RightPanelContent = ({ action }: { action: RightPanelAction }) => {
     case RightPanelActionType.INTERACTION_PREVIEW:
       return (
         <InteractionPreviewPanel
-          key={`${action.interactionId}:${action.tab ?? ''}`}
-          interactionId={action.interactionId}
+          key={`${action.interaction.id}:${action.tab ?? ''}`}
+          interaction={action.interaction}
           initialTab={action.tab}
         />
       );

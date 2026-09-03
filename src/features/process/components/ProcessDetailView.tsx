@@ -7,8 +7,7 @@ import {
   Tabs,
   Typography,
 } from '@exotel-npm-dev/signal-design-system';
-import { useAppSelector } from '@/store/hooks';
-import { selectSelectedProcess } from '../processSlice';
+import { useSelectedProcess } from '../queries';
 import CampaignDataGrid from './CampaignDataGrid';
 import CreateCampaignDrawer from './CreateCampaignDrawer';
 
@@ -17,7 +16,7 @@ type ProcessTab = (typeof TAB_KEYS)[number];
 
 const ProcessDetailView = () => {
   const { t } = useTranslation();
-  const process = useAppSelector(selectSelectedProcess);
+  const process = useSelectedProcess();
   const [activeTab, setActiveTab] = useState<ProcessTab>('campaigns');
   const [campaignDrawerOpen, setCampaignDrawerOpen] = useState(false);
 

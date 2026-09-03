@@ -47,7 +47,7 @@ const InteractionRowActions = ({ interaction }: InteractionRowActionsProps) => {
     dispatch(
       openRightPanel({
         type: RightPanelActionType.INTERACTION_PREVIEW,
-        interactionId: interaction.id,
+        interaction,
         tab,
       }),
     );
@@ -133,7 +133,7 @@ const InteractionRowActions = ({ interaction }: InteractionRowActionsProps) => {
         open={menuAnchor !== null}
         anchorEl={menuAnchor}
         onClose={closeMenu}
-        onClick={(event) => event.stopPropagation()}
+        onClick={(event: MouseEvent) => event.stopPropagation()}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >

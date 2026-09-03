@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Avatar,
@@ -11,12 +11,7 @@ import {
   type GridColDef,
   type ToolbarFilterConfig,
 } from '@exotel-npm-dev/signal-design-system';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import {
-  selectCampaignList,
-  selectGetCampaignListLoading,
-} from '../processSlice';
-import { getCampaignList } from '../asyncActions';
+import { useCampaignList } from '../queries';
 import { CampaignCampaignContextTypeEnum } from '@/boilerplate/cmsApis/models/campaign';
 import CampaignEmptyState from './CampaignEmptyState';
 
@@ -42,22 +37,16 @@ const campaignTypeOptions = Object.values(CampaignCampaignContextTypeEnum).map((
 
 const CampaignDataGrid = ({ processId, onCreateCampaign }: CampaignDataGridProps) => {
   const { t } = useTranslation();
-  const dispatch = useAppDispatch();
-  const campaigns = useAppSelector(selectCampaignList);
-  const loading = useAppSelector(selectGetCampaignListLoading);
+  const { data: campaigns = [], isLoading, refetch } = useCampaignList(processId);
   const [viewMode, setViewMode] = useState('list');
 
-  useEffect(() => {
-    dispatch(getCampaignList(processId));
-  }, [processId, dispatch]);
-
   const handleRefresh = () => {
-    dispatch(getCampaignList(processId));
+    void refetch();
   };
 
   const hasCampaigns = campaigns.length > 0;
 
-  if (!loading && !hasCampaigns) {
+  if (!isLoading && !hasCampaigns) {
     return <CampaignEmptyState onCreateCampaign={onCreateCampaign} />;
   }
 
@@ -176,7 +165,7 @@ const CampaignDataGrid = ({ processId, onCreateCampaign }: CampaignDataGridProps
       <DataGrid
         rows={rows}
         columns={columns}
-        loading={loading}
+        loading={isLoading}
         customToolbarFilters={customToolbarFilters}
         showAppliedFilters
         onRefresh={handleRefresh}

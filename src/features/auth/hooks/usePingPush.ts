@@ -1,29 +1,24 @@
-import { keepAliveWithPingPush } from "@/features/auth/asyncActions";
-import { selectLoginResponse } from "@/features/auth/authSlice";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { useEffect, useRef } from "react";
+import { useAppSelector } from "@/store/hooks";
+import { selectSessionId } from "@/features/auth/authSlice";
+import { useKeepAlive } from "@/features/auth/mutations";
+import { useEffect } from "react";
 
+const KEEP_ALIVE_INTERVAL_MS = 20_000;
 
 const usePingPush = () => {
-  const dispatch = useAppDispatch();
-  const loginResponse = useAppSelector(selectLoginResponse);
-  const intervalId = useRef<number | null>(null);
+  const sessionId = useAppSelector(selectSessionId);
+  const keepAlive = useKeepAlive();
+  const { mutate } = keepAlive;
 
   useEffect(() => {
-    if (loginResponse?.userSessionInfo?.sessionId) {
-      intervalId.current = setInterval(() => {
-        dispatch(keepAliveWithPingPush({
-          sessionId: loginResponse?.userSessionInfo?.sessionId ?? "",
-        }));
-      }, 20000);
-    }
+    if (!sessionId) return;
 
-    return () => {
-      if (intervalId.current) {
-        clearInterval(intervalId.current);
-      }
-    }
-  }, [loginResponse]);
+    const intervalId = setInterval(() => {
+      mutate({ sessionId });
+    }, KEEP_ALIVE_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [sessionId, mutate]);
 
   return null;
 }

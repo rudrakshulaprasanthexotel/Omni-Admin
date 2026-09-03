@@ -8,9 +8,7 @@ import {
   Typography,
 } from '@exotel-npm-dev/signal-design-system';
 import { useTranslation } from 'react-i18next';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { createCampaign } from '../asyncActions';
-import { selectCreateCampaignLoading } from '../processSlice';
+import { useCreateCampaign } from '../queries';
 import { AddCampaignRequestCampaignContextTypeEnum } from '@/boilerplate/cmsApis/models/add-campaign-request';
 import type { CreateCampaignFormValues } from '../types';
 
@@ -32,8 +30,8 @@ const CAMPAIGN_TYPES = Object.entries(AddCampaignRequestCampaignContextTypeEnum)
 
 const CreateCampaignDrawer = ({ open, onClose, processId }: CreateCampaignDrawerProps) => {
   const { t } = useTranslation();
-  const dispatch = useAppDispatch();
-  const loading = useAppSelector(selectCreateCampaignLoading);
+  const createCampaign = useCreateCampaign(processId);
+  const loading = createCampaign.isPending;
 
   const [values, setValues] = useState<CreateCampaignFormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof CreateCampaignFormValues, string>>>({});
@@ -62,22 +60,18 @@ const CreateCampaignDrawer = ({ open, onClose, processId }: CreateCampaignDrawer
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!validate()) return;
 
-    try {
-      await dispatch(
-        createCampaign({
-          processId,
-          campaignContextName: values.campaignContextName.trim(),
-          description: values.description.trim() || undefined,
-          campaignContextType: values.campaignContextType as AddCampaignRequestCampaignContextTypeEnum,
-        }),
-      ).unwrap();
-      handleClose();
-    } catch {
-      // error is handled in the slice
-    }
+    createCampaign.mutate(
+      {
+        processId,
+        campaignContextName: values.campaignContextName.trim(),
+        description: values.description.trim() || undefined,
+        campaignContextType: values.campaignContextType as AddCampaignRequestCampaignContextTypeEnum,
+      },
+      { onSuccess: handleClose },
+    );
   };
 
   return (

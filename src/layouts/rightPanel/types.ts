@@ -1,4 +1,4 @@
-import type { InteractionPreviewTab } from '@/features/interactions/types';
+import type { Interaction, InteractionPreviewTab } from '@/features/interactions/types';
 
 export const RightPanelActionType = {
   INTERACTION_PREVIEW: 'interaction-preview',
@@ -9,7 +9,7 @@ export type RightPanelActionType =
 
 export type RightPanelAction = {
   type: typeof RightPanelActionType.INTERACTION_PREVIEW;
-  interactionId: string;
+  interaction: Interaction;
   tab?: InteractionPreviewTab;
 };
 
