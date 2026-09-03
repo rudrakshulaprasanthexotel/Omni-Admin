@@ -1,9 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import {
-  supervisorApis,
+  appServerApis,
   type AssignedCampaign,
   type AssignedProcess,
-} from '@/services/apiClient/supervisorApis';
+} from '@/services/apiClient/appServerApis';
 import { getApiErrorMessage } from '@/shared/utils/apiError';
 import type { RootState } from '@/store';
 
@@ -14,11 +14,17 @@ export const fetchAssignedProcesses = createAsyncThunk<AssignedProcess[], void, 
   async (_, { getState, rejectWithValue }) => {
     try {
       const sessionId = getState()?.auth?.loginResponse?.userSessionInfo?.sessionId;
-      const { data } = await supervisorApis.getAssignedProcesses(sessionId);
+      const { data } = await appServerApis.getAssignedProcesses(sessionId);
       return data;
     } catch (error: unknown) {
       return rejectWithValue(getApiErrorMessage(error, 'Failed to load assigned processes'));
     }
+  },
+  {
+    condition: (_, { getState }) => {
+      const { assignedProcessesLoaded, assignedProcessesLoading } = getState().process;
+      return !assignedProcessesLoaded && !assignedProcessesLoading;
+    },
   },
 );
 
@@ -27,10 +33,16 @@ export const fetchAssignedCampaigns = createAsyncThunk<AssignedCampaign[], void,
   async (_, { getState, rejectWithValue }) => {
     try {
       const sessionId = getState()?.auth?.loginResponse?.userSessionInfo?.sessionId;
-      const { data } = await supervisorApis.getAssignedCampaigns(sessionId);
+      const { data } = await appServerApis.getAssignedCampaigns(sessionId);
       return data;
     } catch (error: unknown) {
       return rejectWithValue(getApiErrorMessage(error, 'Failed to load assigned campaigns'));
     }
+  },
+  {
+    condition: (_, { getState }) => {
+      const { assignedCampaignsLoaded, assignedCampaignsLoading } = getState().process;
+      return !assignedCampaignsLoaded && !assignedCampaignsLoading;
+    },
   },
 );

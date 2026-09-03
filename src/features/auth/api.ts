@@ -1,17 +1,15 @@
-import { apiClient, setAuthorizationHeader, setSessionId } from '@/services/apiClient';
+import { setAuthorizationHeader, setSessionId } from '@/services/apiClient';
+import { appServerApis } from '@/services/apiClient/appServerApis';
 import type {
   IKeepAliveWithPingPushRequestInputBean,
   ILoginRequestInputBean,
   ILogoutRequestInputBean,
   IRefreshTokenRequestInputBean,
-  IRefreshTokenResponse,
   LoginResponse,
 } from './types';
 
 export async function loginRequest(input: ILoginRequestInputBean): Promise<LoginResponse> {
-  const { data } = await apiClient.post<LoginResponse>('/ameyorestapi/userLogin/login', input, {
-    headers: { Authorization: undefined },
-  });
+  const { data } = await appServerApis.login(input);
 
   setSessionId(data.userSessionInfo.sessionId);
   setAuthorizationHeader(
@@ -22,22 +20,19 @@ export async function loginRequest(input: ILoginRequestInputBean): Promise<Login
 }
 
 export async function logoutRequest(input: ILogoutRequestInputBean): Promise<void> {
-  await apiClient.post('/ameyorestapi/session/userLogout', input);
+  await appServerApis.logout(input);
 }
 
 export async function keepAliveRequest(
   input: IKeepAliveWithPingPushRequestInputBean,
 ): Promise<void> {
-  await apiClient.post('/ameyorestapi/session/keepAliveWithPingPush', input);
+  await appServerApis.keepAliveWithPingPush(input);
 }
 
 export async function refreshTokenRequest(
   input: IRefreshTokenRequestInputBean,
 ): Promise<string> {
-  const { data } = await apiClient.post<IRefreshTokenResponse>(
-    '/ameyorestapi/session/refreshToken',
-    input,
-  );
+  const { data } = await appServerApis.refreshToken(input);
 
   setAuthorizationHeader(data.jwtToken);
 

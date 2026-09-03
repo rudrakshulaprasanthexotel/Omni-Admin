@@ -1,4 +1,4 @@
-import type { AssignedCampaign, AssignedProcess } from "@/services/apiClient/supervisorApis";
+import type { AssignedCampaign, AssignedProcess } from "@/services/apiClient/appServerApis";
 import { clearLoginResponse } from "@/features/auth/authSlice";
 import { fetchAssignedCampaigns, fetchAssignedProcesses } from "./asyncActions";
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme, type HoverCardData } from '@exotel-npm-dev/signal-design-system';
-import { supervisorApis } from '@/services/apiClient/supervisorApis';
+import { appServerApis } from '@/services/apiClient/appServerApis';
 import { loadCached } from '../utils/hoverCardCache';
 import { toCustomerHoverInfo } from '../utils/hoverCardPayload';
 import { mapCustomerHoverCard } from '../utils/mapCustomerHoverCard';
@@ -14,7 +14,7 @@ interface UseCustomerHoverCardArgs {
 
 const loadCustomerInfo = (campaignId: number, customerId: string) =>
   loadCached('customer-info', `${campaignId}:${customerId}`, async () => {
-    const response = await supervisorApis.getCustomerInfosForCustomerId(campaignId, customerId);
+    const response = await appServerApis.getCustomerInfosForCustomerId(campaignId, customerId);
     return toCustomerHoverInfo(response.data);
   });
 

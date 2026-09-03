@@ -1,4 +1,4 @@
-import type { AssignedCampaign, ContactCenterUser } from '@/services/apiClient/supervisorApis';
+import type { AssignedCampaign, ContactCenterUser } from '@/services/apiClient/appServerApis';
 
 export function unwrapApiPayload(payload: unknown): unknown {
   let current = payload;

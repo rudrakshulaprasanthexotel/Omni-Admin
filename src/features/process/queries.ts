@@ -6,7 +6,7 @@ import type {
   Process,
   TableDefinition,
 } from '@/boilerplate/cmsApis/models';
-import { apiClient } from '@/services/apiClient';
+import { appServerApis } from '@/services/apiClient/appServerApis';
 import { cmsApis } from '@/services/apiClient/cmsApis';
 import { selectContactCenterId } from '@/features/auth/authSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -54,9 +54,7 @@ export function useTableDefinitions(enabled: boolean) {
   return useQuery({
     queryKey: processKeys.tableDefinitions(),
     queryFn: async (): Promise<TableDefinition[]> => {
-      const { data } = await apiClient.get<TableDefinition[]>(
-        '/ameyorestapi/cc/tableDefinitions/getAllTableDefinition',
-      );
+      const { data } = await appServerApis.getAllTableDefinitions();
       return data;
     },
     enabled,

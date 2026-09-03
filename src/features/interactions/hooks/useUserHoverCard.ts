@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { HoverCardData } from '@exotel-npm-dev/signal-design-system';
-import { supervisorApis } from '@/services/apiClient/supervisorApis';
+import { appServerApis } from '@/services/apiClient/appServerApis';
 import { loadCached } from '../utils/hoverCardCache';
 import { toAssignedCampaigns, toContactCenterUsers } from '../utils/hoverCardPayload';
 import { mapUserHoverCard } from '../utils/mapUserHoverCard';
@@ -13,13 +13,13 @@ interface UseUserHoverCardArgs {
 
 const loadContactCenterUsers = () =>
   loadCached('cc-users', 'all', async () => {
-    const response = await supervisorApis.getAllContactCenterUsers();
+    const response = await appServerApis.getAllContactCenterUsers();
     return toContactCenterUsers(response.data);
   });
 
 const loadAssignedCampaigns = (userId: string) =>
   loadCached('user-campaigns', userId, async () => {
-    const response = await supervisorApis.getCampaignsAssignedByUserId(userId);
+    const response = await appServerApis.getCampaignsAssignedByUserId(userId);
     return toAssignedCampaigns(response.data);
   });
 

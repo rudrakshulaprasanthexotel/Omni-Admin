@@ -7,7 +7,7 @@ import type { CampaignUserResponse, QueueDetailBean } from '@/boilerplate/cmsApi
 import { GetInteractionWithFilterStateEnum } from '@/boilerplate/dataEngineApis/apis/interactions-api';
 import { cmsApis } from '@/services/apiClient/cmsApis';
 import { dataEngineApis } from '@/services/apiClient/dataEngineApis';
-import { supervisorApis, type DispositionCodeBean } from '@/services/apiClient/supervisorApis';
+import { appServerApis, type DispositionCodeBean } from '@/services/apiClient/appServerApis';
 
 /**
  * All filters and pagination inputs the Interaction Details page can pass to
@@ -166,7 +166,7 @@ export async function fetchCampaignQueues(campaignId: number): Promise<QueueDeta
 export async function fetchCampaignDispositions(
   campaignId: number,
 ): Promise<DispositionCodeBean[]> {
-  const { data } = await supervisorApis.getDispositionCodesByCampaign(campaignId);
+  const { data } = await appServerApis.getDispositionCodesByCampaign(campaignId);
   return data;
 }
 

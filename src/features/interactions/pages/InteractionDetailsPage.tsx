@@ -22,20 +22,14 @@ import {
 } from '@exotel-npm-dev/signal-design-system';
 
 type ToolbarFilterRecords = Parameters<NonNullable<DataGridProps['onToolbarFiltersChange']>>[0];
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { useAppSelector } from '@/store/hooks';
 import type { CampaignUserResponse, QueueDetailBean } from '@/boilerplate/cmsApis/models';
-import type { DispositionCodeBean } from '@/services/apiClient/supervisorApis';
+import type { DispositionCodeBean } from '@/services/apiClient/appServerApis';
 import { selectContactCenterId } from '@/features/auth/authSlice';
 import {
-  fetchAssignedCampaigns,
-  fetchAssignedProcesses,
-} from '@/features/process/asyncActions';
-import {
   selectAssignedCampaigns,
-  selectAssignedCampaignsLoaded,
   selectAssignedCampaignsLoading,
   selectAssignedProcesses,
-  selectAssignedProcessesLoaded,
   selectAssignedProcessesLoading,
 } from '@/features/process/processSlice';
 import type { InteractionsFilters } from '../api';
@@ -249,7 +243,6 @@ const toUserOptions = (users: CampaignUserResponse[]): MultiSelectOption[] =>
 
 export function Component() {
   const { t } = useTranslation();
-  const dispatch = useAppDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
   const theme = useTheme();
 
@@ -282,10 +275,8 @@ export function Component() {
   const contactCenterId = useAppSelector(selectContactCenterId);
   const campaigns = useAppSelector(selectAssignedCampaigns);
   const campaignsLoading = useAppSelector(selectAssignedCampaignsLoading);
-  const campaignsLoaded = useAppSelector(selectAssignedCampaignsLoaded);
   const processes = useAppSelector(selectAssignedProcesses);
   const processesLoading = useAppSelector(selectAssignedProcessesLoading);
-  const processesLoaded = useAppSelector(selectAssignedProcessesLoaded);
 
   const activeCampaign = useMemo(
     () => campaigns.find((c) => c.campaignId === campaignId) ?? null,
@@ -389,18 +380,6 @@ export function Component() {
 
     return () => clearTimeout(timer);
   }, [searchInput, searchQuery, setSearchParams]);
-
-  // Normally already loaded by `useSessionBootstrap`; these cover a hard reload
-  // straight onto /interactions before the bootstrap thunks settle.
-  useEffect(() => {
-    if (processesLoaded || processesLoading) return;
-    dispatch(fetchAssignedProcesses());
-  }, [dispatch, processesLoaded, processesLoading]);
-
-  useEffect(() => {
-    if (campaignsLoaded || campaignsLoading) return;
-    dispatch(fetchAssignedCampaigns());
-  }, [dispatch, campaignsLoaded, campaignsLoading]);
 
   useEffect(() => {
     if (firstProcessId === null) return;

@@ -1,20 +1,36 @@
 import type { AxiosResponse } from 'axios';
 import { apiClient } from '.';
+import type { TableDefinition } from '@/boilerplate/cmsApis/models';
+import type {
+  IKeepAliveWithPingPushRequestInputBean,
+  ILoginRequestInputBean,
+  ILogoutRequestInputBean,
+  IRefreshTokenRequestInputBean,
+  IRefreshTokenResponse,
+  LoginResponse,
+} from '@/features/auth/types';
 
 /**
- * Hand-written REST wrapper for the "supervisor" surface hosted at
- * `/ameyorestapi/...` on the Ameyo appserver. We deliberately use REST here
- * even where the 6x GWT UI still calls GWT-RPC — those RPCs are thin wrappers
- * around these same endpoints (see §5 of the validation report), and the
- * revamp is expected to skip the RPC hop entirely.
+ * Hand-written REST wrapper for the Ameyo appserver surface hosted at
+ * `/ameyorestapi/...`. We deliberately use REST here even where the 6x GWT UI
+ * still calls GWT-RPC — those RPCs are thin wrappers around these same
+ * endpoints (see §5 of the validation report), and the revamp is expected to
+ * skip the RPC hop entirely.
  *
  * All routes below are unauthenticated at this layer; the base `apiClient`
  * attaches the `sessionId` header and `Authorization` bearer JWT via its
  * request interceptor.
  */
 
-const AMEYO_REST_BASE = '/ameyorestapi';
-const CC_REST_BASE = `${AMEYO_REST_BASE}/cc`;
+const APP_SERVER_BASE = import.meta.env.VITE_APP_SERVER_API_BASE_PATH ?? '/ameyorestapi';
+const CC_BASE = `${APP_SERVER_BASE}/cc`;
+
+export const APP_SERVER_PATHS = {
+  login: `${APP_SERVER_BASE}/userLogin/login`,
+  logout: `${APP_SERVER_BASE}/session/userLogout`,
+  keepAlive: `${APP_SERVER_BASE}/session/keepAliveWithPingPush`,
+  refreshToken: `${APP_SERVER_BASE}/session/refreshToken`,
+} as const;
 
 export interface ColumnMapping {
   id?: number;
@@ -88,19 +104,6 @@ export interface VoiceCampaignSettings {
   [key: string]: unknown;
 }
 
-export interface CampaignUser {
-  userId: string;
-  userName: string;
-  groupIds?: number[];
-}
-
-export interface CampaignUserPage {
-  users: CampaignUser[];
-  totalCount: number;
-  pageNumber?: number;
-  pageSize?: number;
-}
-
 /**
  * Query-string builder that skips undefined / empty values and expands arrays
  * to repeated `key=v1&key=v2` params, matching the Ameyo REST convention.
@@ -119,7 +122,33 @@ function buildQuery(params: Record<string, unknown>): string {
   return qs ? `?${qs}` : '';
 }
 
-export const supervisorApis = {
+export const appServerApis = {
+  /**
+   * The stale bearer from a previous session would be rejected, so the header
+   * is stripped for this one call.
+   */
+  login(input: ILoginRequestInputBean): Promise<AxiosResponse<LoginResponse>> {
+    return apiClient.post<LoginResponse>(APP_SERVER_PATHS.login, input, {
+      headers: { Authorization: undefined },
+    });
+  },
+
+  logout(input: ILogoutRequestInputBean): Promise<AxiosResponse<void>> {
+    return apiClient.post<void>(APP_SERVER_PATHS.logout, input);
+  },
+
+  keepAliveWithPingPush(
+    input: IKeepAliveWithPingPushRequestInputBean,
+  ): Promise<AxiosResponse<void>> {
+    return apiClient.post<void>(APP_SERVER_PATHS.keepAlive, input);
+  },
+
+  refreshToken(
+    input: IRefreshTokenRequestInputBean,
+  ): Promise<AxiosResponse<IRefreshTokenResponse>> {
+    return apiClient.post<IRefreshTokenResponse>(APP_SERVER_PATHS.refreshToken, input);
+  },
+
   /**
    * Column-mapping metadata used by the "Customer …" quick-filter dropdown
    * and the advanced Filters chip. Replaces `RPC CommonGwtRpcService.getColumnMappingsByCampaignId`.
@@ -129,7 +158,7 @@ export const supervisorApis = {
     info = false,
   ): Promise<AxiosResponse<ColumnMapping[]>> {
     return apiClient.get<ColumnMapping[]>(
-      `${CC_REST_BASE}/columnMappings/getByCampaign${buildQuery({ campaignId, info })}`,
+      `${CC_BASE}/columnMappings/getByCampaign${buildQuery({ campaignId, info })}`,
     );
   },
 
@@ -140,7 +169,7 @@ export const supervisorApis = {
    */
   getAssignedCampaigns(sessionId?: string): Promise<AxiosResponse<AssignedCampaign[]>> {
     return apiClient.get<AssignedCampaign[]>(
-      `${CC_REST_BASE}/campaigns/getAssigned${buildQuery({ sessionId })}`,
+      `${CC_BASE}/campaigns/getAssigned${buildQuery({ sessionId })}`,
     );
   },
 
@@ -150,8 +179,12 @@ export const supervisorApis = {
    */
   getAssignedProcesses(sessionId?: string): Promise<AxiosResponse<AssignedProcess[]>> {
     return apiClient.get<AssignedProcess[]>(
-      `${CC_REST_BASE}/processes/getAssigned${buildQuery({ sessionId })}`,
+      `${CC_BASE}/processes/getAssigned${buildQuery({ sessionId })}`,
     );
+  },
+
+  getAllTableDefinitions(): Promise<AxiosResponse<TableDefinition[]>> {
+    return apiClient.get<TableDefinition[]>(`${CC_BASE}/tableDefinitions/getAllTableDefinition`);
   },
 
   /**
@@ -160,13 +193,13 @@ export const supervisorApis = {
    */
   getAssignedGroupsInCampaign(campaignId: number): Promise<AxiosResponse<UserGroup[]>> {
     return apiClient.get<UserGroup[]>(
-      `${CC_REST_BASE}/usergroup/campaigns/${campaignId}/assignedgroups`,
+      `${CC_BASE}/usergroup/campaigns/${campaignId}/assignedgroups`,
     );
   },
 
   /** Tenant-wide list of groups (used when the Filters chip is CC-scoped). */
   getAllAvailableGroups(): Promise<AxiosResponse<UserGroup[]>> {
-    return apiClient.get<UserGroup[]>(`${AMEYO_REST_BASE}/group/getAllAvailableGroups`);
+    return apiClient.get<UserGroup[]>(`${APP_SERVER_BASE}/group/getAllAvailableGroups`);
   },
 
   /**
@@ -174,7 +207,7 @@ export const supervisorApis = {
    * client (`cqaApis.getInteractionAnalysis`) needs to compose its URL.
    */
   getContactCenterSettings(): Promise<AxiosResponse<ContactCenterSettings>> {
-    return apiClient.get<ContactCenterSettings>(`${CC_REST_BASE}/contactCenterSettings`);
+    return apiClient.get<ContactCenterSettings>(`${CC_BASE}/contactCenterSettings`);
   },
 
   /**
@@ -187,7 +220,7 @@ export const supervisorApis = {
     userType?: string;
   }): Promise<AxiosResponse<boolean>> {
     return apiClient.get<boolean>(
-      `${CC_REST_BASE}/isContactCenterPrivilegeAvailableForUserTypesByContext${buildQuery(query)}`,
+      `${CC_BASE}/isContactCenterPrivilegeAvailableForUserTypesByContext${buildQuery(query)}`,
     );
   },
 
@@ -199,7 +232,7 @@ export const supervisorApis = {
     campaignId: number,
   ): Promise<AxiosResponse<VoiceCampaignSettings>> {
     return apiClient.get<VoiceCampaignSettings>(
-      `${AMEYO_REST_BASE}/voice/inboundVoiceCampaignSettings/${campaignId}`,
+      `${APP_SERVER_BASE}/voice/inboundVoiceCampaignSettings/${campaignId}`,
     );
   },
 
@@ -208,7 +241,7 @@ export const supervisorApis = {
     campaignId: number,
   ): Promise<AxiosResponse<VoiceCampaignSettings>> {
     return apiClient.get<VoiceCampaignSettings>(
-      `${AMEYO_REST_BASE}/voice/outboundVoiceCampaignSettings/${campaignId}`,
+      `${APP_SERVER_BASE}/voice/outboundVoiceCampaignSettings/${campaignId}`,
     );
   },
 
@@ -221,7 +254,7 @@ export const supervisorApis = {
     info = false,
   ): Promise<AxiosResponse<DispositionCodeBean[]>> {
     return apiClient.get<DispositionCodeBean[]>(
-      `${CC_REST_BASE}/dispositionCodes/getByCampaign${buildQuery({ campaignId, info })}`,
+      `${CC_BASE}/dispositionCodes/getByCampaign${buildQuery({ campaignId, info })}`,
     );
   },
 
@@ -233,24 +266,7 @@ export const supervisorApis = {
     campaignId: number,
   ): Promise<AxiosResponse<DispositionEntry[]>> {
     return apiClient.get<DispositionEntry[]>(
-      `${AMEYO_REST_BASE}/dispositionManager/getDispositionClassesWithDispositionCodesNameOfCampaign${buildQuery({ campaignId })}`,
-    );
-  },
-
-  /**
-   * Paginated user picker for the User chip.
-   */
-  getCampaignUsers(args: {
-    contactCenterId: number;
-    processId: number;
-    campaignId: number;
-    pageNumber?: number;
-    pageSize?: number;
-    search?: string;
-  }): Promise<AxiosResponse<CampaignUserPage>> {
-    const { contactCenterId, processId, campaignId, ...query } = args;
-    return apiClient.get<CampaignUserPage>(
-      `/cms/cc/${contactCenterId}/process/${processId}/campaign/${campaignId}/campaign-user${buildQuery(query)}`,
+      `${APP_SERVER_BASE}/dispositionManager/getDispositionClassesWithDispositionCodesNameOfCampaign${buildQuery({ campaignId })}`,
     );
   },
 
@@ -261,7 +277,7 @@ export const supervisorApis = {
    */
   getAllContactCenterUsers(info?: boolean): Promise<AxiosResponse<ContactCenterUser[]>> {
     return apiClient.get<ContactCenterUser[]>(
-      `${CC_REST_BASE}/contactCenterUsers/getAllContactCenterUsers${buildQuery({ info })}`,
+      `${CC_BASE}/contactCenterUsers/getAllContactCenterUsers${buildQuery({ info })}`,
     );
   },
 
@@ -274,7 +290,7 @@ export const supervisorApis = {
     customerId: string,
   ): Promise<AxiosResponse<unknown>> {
     return apiClient.get(
-      `${CC_REST_BASE}/getCustomerInfosForCustomerId${buildQuery({ campaignId, customerId })}`,
+      `${CC_BASE}/getCustomerInfosForCustomerId${buildQuery({ campaignId, customerId })}`,
     );
   },
 
@@ -284,7 +300,7 @@ export const supervisorApis = {
    */
   getCampaignsAssignedByUserId(userId: string): Promise<AxiosResponse<AssignedCampaign[]>> {
     return apiClient.get<AssignedCampaign[]>(
-      `${CC_REST_BASE}/hybrid/campaigns/getAssignedByUserId${buildQuery({ userId })}`,
+      `${CC_BASE}/hybrid/campaigns/getAssignedByUserId${buildQuery({ userId })}`,
     );
   },
 
@@ -297,7 +313,7 @@ export const supervisorApis = {
     info = false,
   ): Promise<AxiosResponse<AgentQueue[]>> {
     return apiClient.get<AgentQueue[]>(
-      `${CC_REST_BASE}/agentQueues/getByCampaign${buildQuery({ campaignId, info })}`,
+      `${CC_BASE}/agentQueues/getByCampaign${buildQuery({ campaignId, info })}`,
     );
   },
 };

@@ -3,6 +3,7 @@ import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosErr
 import AmeyoLogger from '@/services/ameyoLogger/logger';
 import type { RootState } from '@/store';
 import { logoutRequest, refreshTokenRequest } from '@/features/auth/api';
+import { APP_SERVER_PATHS } from './appServerApis';
 import { clearLoginResponse, setJwt } from '@/features/auth/authSlice';
 import type { Store } from '@reduxjs/toolkit';
 
@@ -14,10 +15,6 @@ const apiClient: AxiosInstance = axios.create({
   timeout: 30_000,
   headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 });
-
-const REFRESH_TOKEN_URL = '/ameyorestapi/session/refreshToken';
-const LOGIN_URL = '/ameyorestapi/userLogin/login';
-const LOGOUT_URL = '/ameyorestapi/session/userLogout';
 
 // Single-flight refresh: concurrent 401s share one refresh call.
 let refreshPromise: Promise<string> | null = null;
@@ -65,9 +62,9 @@ export function setupApiClientInterceptors(store: Store<RootState>): void {
         : undefined;
       
       const status = error.response?.status;
-      const isRefreshCall = originalRequest?.url?.includes(REFRESH_TOKEN_URL);
-      const isLoginCall = originalRequest?.url?.includes(LOGIN_URL);
-      const isLogoutCall = originalRequest?.url?.includes(LOGOUT_URL);
+      const isRefreshCall = originalRequest?.url?.includes(APP_SERVER_PATHS.refreshToken);
+      const isLoginCall = originalRequest?.url?.includes(APP_SERVER_PATHS.login);
+      const isLogoutCall = originalRequest?.url?.includes(APP_SERVER_PATHS.logout);
       const hasSession = Boolean(store.getState()?.auth?.loginResponse?.userSessionInfo?.sessionId);
   
       if (
