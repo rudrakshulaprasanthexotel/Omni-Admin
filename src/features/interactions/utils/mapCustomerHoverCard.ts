@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import type { HoverCardData, HoverCardDetail } from '@exotel-npm-dev/signal-design-system';
+import type { ProfileCardData, ProfileCardDetail } from '@exotel-npm-dev/signal-design-system';
 import { displayValue, formatShortDate } from './formatInteraction';
 import type { CustomerHoverInfo } from './hoverCardPayload';
 
@@ -26,8 +26,8 @@ export function mapCustomerHoverCard({
   info,
   channelColors,
   t,
-}: MapCustomerHoverCardArgs): HoverCardData {
-  const details: HoverCardDetail[] = [
+}: MapCustomerHoverCardArgs): ProfileCardData {
+  const details: ProfileCardDetail[] = [
     { id: 'customerId', label: t('hoverCardCustomerId'), value: displayValue(info.customerId) },
     { id: 'firstName', label: t('hoverCardFirstName'), value: displayValue(info.firstName) },
     { id: 'lastName', label: t('hoverCardLastName'), value: displayValue(info.lastName) },
@@ -44,7 +44,6 @@ export function mapCustomerHoverCard({
   ];
 
   return {
-    variant: 'customer',
     title: info.title ?? fallbackName,
     action: {
       label: t('hoverCardViewCrm'),

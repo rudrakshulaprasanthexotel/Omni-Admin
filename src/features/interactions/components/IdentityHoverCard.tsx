@@ -1,5 +1,9 @@
-import type { MouseEvent, ReactNode } from 'react';
-import { HoverCard } from '@exotel-npm-dev/signal-design-system';
+import { useState, type MouseEvent } from 'react';
+import {
+  ProfileCard,
+  type AvatarSize,
+  type ProfileCardSlotProps,
+} from '@exotel-npm-dev/signal-design-system';
 import { useCustomerHoverCard } from '../hooks/useCustomerHoverCard';
 import { useUserHoverCard } from '../hooks/useUserHoverCard';
 
@@ -9,7 +13,8 @@ interface IdentityHoverCardProps {
   customerId?: string;
   userId?: string;
   campaignId?: number;
-  children: ReactNode;
+  avatarSize?: AvatarSize;
+  slotProps?: ProfileCardSlotProps;
 }
 
 const stopCellActivation = (event: MouseEvent) => {
@@ -22,8 +27,10 @@ const IdentityHoverCard = ({
   customerId,
   userId,
   campaignId,
-  children,
+  avatarSize = 'large',
+  slotProps,
 }: IdentityHoverCardProps) => {
+  const [open, setOpen] = useState(false);
   const customer = useCustomerHoverCard({
     name,
     customerId: kind === 'customer' ? customerId : undefined,
@@ -36,20 +43,30 @@ const IdentityHoverCard = ({
   const card = kind === 'customer' ? customer : user;
 
   return (
-    <HoverCard
+    <ProfileCard
+      name={name}
       variant={kind}
+      avatarSize={avatarSize}
       data={card.data}
+      loading={card.loading}
       disabled={!card.enabled}
-      onOpenChange={card.onOpenChange}
+      open={open}
+      onHoverIntent={card.onHoverIntent}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (nextOpen) card.onHoverIntent();
+      }}
       slotProps={{
+        ...slotProps,
         trigger: {
-          onClick: stopCellActivation,
-          sx: { height: '100%', minWidth: 0, display: 'flex', alignItems: 'center' },
+          ...slotProps?.trigger,
+          onClick: (event) => {
+            stopCellActivation(event);
+            slotProps?.trigger?.onClick?.(event);
+          },
         },
       }}
-    >
-      {children}
-    </HoverCard>
+    />
   );
 };
 

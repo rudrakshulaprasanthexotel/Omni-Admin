@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTheme, type HoverCardData } from '@exotel-npm-dev/signal-design-system';
+import { useTheme, type ProfileCardData } from '@exotel-npm-dev/signal-design-system';
 import { appServerApis } from '@/services/apiClient/appServerApis';
 import { loadCached } from '../utils/hoverCardCache';
 import { toCustomerHoverInfo } from '../utils/hoverCardPayload';
@@ -25,8 +25,9 @@ export const useCustomerHoverCard = ({
 }: UseCustomerHoverCardArgs) => {
   const { t } = useTranslation();
   const theme = useTheme();
-  const [data, setData] = useState<HoverCardData | undefined>();
+  const [data, setData] = useState<ProfileCardData | undefined>();
   const [loadedKey, setLoadedKey] = useState<string>();
+  const [loading, setLoading] = useState(false);
 
   const cacheKey = customerId && campaignId != null ? `${campaignId}:${customerId}` : undefined;
 
@@ -43,51 +44,39 @@ export const useCustomerHoverCard = ({
     ],
   );
 
-  const pendingData = useMemo<HoverCardData>(
-    () =>
-      mapCustomerHoverCard({
-        fallbackName: name,
-        info: {},
-        channelColors,
-        t,
-      }),
-    [channelColors, name, t],
-  );
+  const onHoverIntent = useCallback(() => {
+    if (!cacheKey || !customerId || campaignId == null) return;
+    if (loadedKey === cacheKey && data) return;
 
-  const onOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open || !cacheKey || !customerId || campaignId == null) return;
-      if (loadedKey === cacheKey && data) return;
+    setLoading(true);
 
-      setData(pendingData);
-
-      void (async () => {
-        try {
-          const info = await loadCustomerInfo(campaignId, customerId);
-          setData(
-            mapCustomerHoverCard({
-              fallbackName: name,
-              info,
-              channelColors,
-              t,
-            }),
-          );
-          setLoadedKey(cacheKey);
-        } catch {
-          setData({
-            variant: 'customer',
-            title: name,
-            footer: t('hoverCardLoadError'),
-          });
-        }
-      })();
-    },
-    [cacheKey, campaignId, channelColors, customerId, data, loadedKey, name, pendingData, t],
-  );
+    void (async () => {
+      try {
+        const info = await loadCustomerInfo(campaignId, customerId);
+        setData(
+          mapCustomerHoverCard({
+            fallbackName: name,
+            info,
+            channelColors,
+            t,
+          }),
+        );
+        setLoadedKey(cacheKey);
+      } catch {
+        setData({
+          title: name,
+          footer: t('hoverCardLoadError'),
+        });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [cacheKey, campaignId, channelColors, customerId, data, loadedKey, name, t]);
 
   return {
     enabled: Boolean(cacheKey),
-    data: data ?? pendingData,
-    onOpenChange,
+    data,
+    loading,
+    onHoverIntent,
   };
 };

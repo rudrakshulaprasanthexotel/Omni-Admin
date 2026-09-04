@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { HoverCardData } from '@exotel-npm-dev/signal-design-system';
+import type { ProfileCardData } from '@exotel-npm-dev/signal-design-system';
 import { appServerApis } from '@/services/apiClient/appServerApis';
 import { loadCached } from '../utils/hoverCardCache';
 import { toAssignedCampaigns, toContactCenterUsers } from '../utils/hoverCardPayload';
@@ -25,67 +25,55 @@ const loadAssignedCampaigns = (userId: string) =>
 
 export const useUserHoverCard = ({ name, userId }: UseUserHoverCardArgs) => {
   const { t } = useTranslation();
-  const [data, setData] = useState<HoverCardData | undefined>();
+  const [data, setData] = useState<ProfileCardData | undefined>();
   const [loadedKey, setLoadedKey] = useState<string>();
+  const [loading, setLoading] = useState(false);
 
-  const pendingData = useMemo<HoverCardData>(
-    () =>
-      mapUserHoverCard({
-        name,
-        userId,
-        userName: name,
-        campaigns: [],
-        t,
-      }),
-    [name, t, userId],
-  );
+  const onHoverIntent = useCallback(() => {
+    if (!userId) return;
+    if (loadedKey === userId && data) return;
 
-  const onOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open || !userId) return;
-      if (loadedKey === userId && data) return;
+    setLoading(true);
 
-      setData(pendingData);
+    void (async () => {
+      try {
+        const [users, campaigns] = await Promise.all([
+          loadContactCenterUsers(),
+          loadAssignedCampaigns(userId),
+        ]);
+        const user = users.find((entry) => entry.userId === userId);
 
-      void (async () => {
-        try {
-          const [users, campaigns] = await Promise.all([
-            loadContactCenterUsers(),
-            loadAssignedCampaigns(userId),
-          ]);
-          const user = users.find((entry) => entry.userId === userId);
-
-          setData(
-            mapUserHoverCard({
-              name: user?.userName ?? name,
-              userId: user?.userId ?? userId,
-              userType: user?.userType,
-              userName: user?.userName,
-              systemUserType: user?.systemUserType,
-              campaigns: campaigns.map((campaign) => ({
-                id: campaign.campaignId,
-                name: campaign.campaignName,
-              })),
-              t,
-            }),
-          );
-          setLoadedKey(userId);
-        } catch {
-          setData({
-            variant: 'user',
-            title: name,
-            subtitle: userId.startsWith('@') ? userId : `@${userId}`,
-            footer: t('hoverCardLoadError'),
-          });
-        }
-      })();
-    },
-    [data, loadedKey, name, pendingData, t, userId],
-  );
+        setData(
+          mapUserHoverCard({
+            name: user?.userName ?? name,
+            userId: user?.userId ?? userId,
+            userType: user?.userType,
+            userName: user?.userName,
+            systemUserType: user?.systemUserType,
+            campaigns: campaigns.map((campaign) => ({
+              id: campaign.campaignId,
+              name: campaign.campaignName,
+            })),
+            t,
+          }),
+        );
+        setLoadedKey(userId);
+      } catch {
+        setData({
+          title: name,
+          subtitle: userId.startsWith('@') ? userId : `@${userId}`,
+          footer: t('hoverCardLoadError'),
+        });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [data, loadedKey, name, t, userId]);
 
   return {
     enabled: Boolean(userId),
-    data: data ?? pendingData,
-    onOpenChange,
+    data,
+    loading,
+    onHoverIntent,
   };
 };

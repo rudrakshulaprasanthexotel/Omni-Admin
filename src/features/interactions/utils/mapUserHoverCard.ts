@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import type { HoverCardData, HoverCardDetail } from '@exotel-npm-dev/signal-design-system';
+import type { ProfileCardData, ProfileCardDetail } from '@exotel-npm-dev/signal-design-system';
 import { displayValue } from './formatInteraction';
 
 interface MapUserHoverCardArgs {
@@ -20,8 +20,8 @@ export function mapUserHoverCard({
   systemUserType,
   campaigns,
   t,
-}: MapUserHoverCardArgs): HoverCardData {
-  const details: HoverCardDetail[] = [
+}: MapUserHoverCardArgs): ProfileCardData {
+  const details: ProfileCardDetail[] = [
     { id: 'userType', label: t('hoverCardUserType'), value: displayValue(userType) },
     {
       id: 'systemUserType',
@@ -31,12 +31,8 @@ export function mapUserHoverCard({
   ];
 
   return {
-    variant: 'user',
     title: userName ?? name,
     subtitle: userId ? (userId.startsWith('@') ? userId : `@${userId}`) : undefined,
-    action: {
-      label: t('hoverCardDetailedView'),
-    },
     details,
     sections:
       campaigns.length > 0

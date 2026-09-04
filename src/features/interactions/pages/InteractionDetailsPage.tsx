@@ -45,7 +45,6 @@ import {
   InteractionChannelType,
   type Interaction,
 } from '../types';
-import IdentityCell from '../components/IdentityCell';
 import IdentityHoverCard from '../components/IdentityHoverCard';
 import InteractionRowActions from '../components/InteractionRowActions';
 import { SelectorAvatar, SelectorListItem } from '../components/SelectorEntity';
@@ -641,9 +640,7 @@ export function Component() {
             name={params.row.customer.name}
             customerId={params.row.customer.id}
             campaignId={params.row.campaignId ?? campaignId ?? undefined}
-          >
-            <IdentityCell kind="customer" name={params.row.customer.name} />
-          </IdentityHoverCard>
+          />
         ),
       },
       {
@@ -689,9 +686,7 @@ export function Component() {
             kind="user"
             name={params.row.user.name}
             userId={params.row.user.id}
-          >
-            <IdentityCell kind="user" name={params.row.user.name} />
-          </IdentityHoverCard>
+          />
         ),
       },
       {

@@ -1,15 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Avatar,
-  Box,
-  Divider,
-  Icon,
-  Typography,
-  getAvatarColors,
-  getInitials,
-  useTheme,
-} from '@exotel-npm-dev/signal-design-system';
+import { Box, Divider, Icon, Typography, useTheme } from '@exotel-npm-dev/signal-design-system';
 import { CHANNEL_ICON, CHANNEL_TYPE_ICON } from '../constants';
 import {
   InteractionChannel,
@@ -51,38 +42,6 @@ const OverviewText = ({ value }: { value: string | number | undefined | null }) 
     {displayValue(value)}
   </Typography>
 );
-
-const OverviewIdentity = ({
-  name,
-  kind,
-}: {
-  name: string;
-  kind: 'customer' | 'user';
-}) => {
-  const displayName = displayValue(name);
-  const { bgcolor, color } = getAvatarColors(isPresent(name) ? name : displayName);
-
-  return (
-    <>
-      <Avatar
-        alt={displayName}
-        variant={kind === 'customer' ? 'circular' : 'rounded'}
-        sx={{
-          width: 24,
-          height: 24,
-          fontSize: 12,
-          bgcolor,
-          color,
-        }}
-      >
-        {isPresent(name) ? getInitials(name) : displayName}
-      </Avatar>
-      <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
-        {displayName}
-      </Typography>
-    </>
-  );
-};
 
 interface InteractionOverviewProps {
   interaction: Interaction;
@@ -155,18 +114,18 @@ const InteractionOverview = ({ interaction }: InteractionOverviewProps) => {
             name={interaction.customer.name}
             customerId={interaction.customer.id}
             campaignId={interaction.campaignId}
-          >
-            <OverviewIdentity kind="customer" name={interaction.customer.name} />
-          </IdentityHoverCard>
+            avatarSize="medium"
+            slotProps={{ name: { color: 'text.secondary' } }}
+          />
         </OverviewRow>
         <OverviewRow label={t('interactionsColumnUser')}>
           <IdentityHoverCard
             kind="user"
             name={interaction.user.name}
             userId={interaction.user.id}
-          >
-            <OverviewIdentity kind="user" name={interaction.user.name} />
-          </IdentityHoverCard>
+            avatarSize="medium"
+            slotProps={{ name: { color: 'text.secondary' } }}
+          />
         </OverviewRow>
         <OverviewRow label={t('interactionsColumnChannelDetail')}>
           <OverviewText value={interaction.channelDetail} />
